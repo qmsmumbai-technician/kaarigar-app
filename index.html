@@ -542,7 +542,10 @@ function initUserApp() {
       return;
     }
     listContent.innerHTML = sorted.map((t) => {
-      const primaryTradeId = (t.trades && t.trades[0]) || currentTrade;
+      // When browsing a specific category, always show THAT category's icon/color —
+      // not whichever trade happens to be first in the technician's list. Only the
+      // "show everyone nearby" (isAll) view falls back to their first trade.
+      const primaryTradeId = isAll ? ((t.trades && t.trades[0]) || currentTrade) : currentTrade;
       const tr = TRADE_MAP[primaryTradeId] || { color:"#1C2541", icon:"handyman", label:"Technician" };
       return `
       <div class="tech-card">
