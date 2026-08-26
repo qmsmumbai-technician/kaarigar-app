@@ -269,6 +269,9 @@
     <button id="btn-switch-role-tech" style="background:rgba(246,244,239,0.14); border:none; color:#F6F4EF; font-size:10px; padding:6px 10px; border-radius:999px; font-family:'JetBrains Mono',monospace; cursor:pointer;">SWITCH ROLE</button>
   </header>
   <main>
+    <div id="tech-loading" style="padding:30px 0; text-align:center; color:#8891A0; font-family:'JetBrains Mono',monospace; font-size:13px;">Loading your profile…</div>
+
+    <div id="tech-registration" style="display:none">
     <h2>Your status</h2>
     <p class="sub">Going online shares your live location with nearby users.</p>
 
@@ -301,10 +304,38 @@
       <button type="button" class="trade-chip" data-trade="kabadi_wala" style="--accent:#6B8E4E"><span class="msr">recycling</span> Kabadi Wala</button>
     </div>
     <p class="hint" id="trade-hint">0 / 2 selected</p>
+    </div>
+
+    <!-- SUMMARY (returning, already-registered technician) -->
+    <div id="tech-summary" style="display:none">
+      <h2>Your status</h2>
+      <p class="sub">Going online shares your live location with nearby users.</p>
+      <div style="background:#FBFAF6; border-radius:10px; padding:16px; box-shadow:0 1px 3px rgba(28,37,65,0.08); margin-bottom:16px;">
+        <div style="font-weight:700; font-size:17px; color:#1C2541" id="summary-name"></div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#8891A0; margin-top:2px" id="summary-phone"></div>
+        <div id="summary-trades" style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;"></div>
+      </div>
+      <button id="btn-add-service" class="link-btn" style="display:flex; align-items:center; gap:6px; background:#FBFAF6; border:1px dashed rgba(28,37,65,0.25); border-radius:8px; padding:12px; width:100%; justify-content:center; text-decoration:none; color:#1C2541; font-weight:600; margin-bottom:18px; cursor:pointer;">
+        <span class="msr" style="font-size:16px">add_circle</span> Add Service
+      </button>
+    </div>
+
+    <!-- ADD SERVICE (pick one more trade, up to the 2-service limit) -->
+    <div id="tech-addservice" style="display:none">
+      <button class="back-btn" id="btn-addservice-back" style="display:flex; align-items:center; gap:4px; background:none; border:none; color:#1C2541; font-size:14px; padding:0; margin-bottom:16px; cursor:pointer;"><span class="msr" style="font-size:16px">arrow_back</span> Back</button>
+      <h2>Add a service</h2>
+      <p class="sub">Pick one more trade to offer alongside your current one.</p>
+      <div style="background:#FBFAF6; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:#8891A0;">
+        <span id="addservice-name" style="color:#1C2541; font-weight:600"></span> · <span id="addservice-phone" style="font-family:'JetBrains Mono',monospace"></span>
+      </div>
+      <div class="trades" id="addservice-trades"></div>
+      <div style="height:16px"></div>
+      <button id="btn-addservice-confirm" disabled style="width:100%; padding:15px; border:none; border-radius:10px; font-size:15px; font-weight:700; color:#1C2541; background:#F2A93B; cursor:pointer; font-family:'Inter',sans-serif;">Confirm</button>
+    </div>
 
     <p class="hint" id="trial-status" style="margin-bottom:8px"></p>
     <div style="height:8px"></div>
-    <button id="btn-toggle">Go Online</button>
+    <button id="btn-toggle" style="display:none">Go Online</button>
     <p class="hint" id="hint">Add your name, phone, and at least one trade first.</p>
 
     <div class="status-box" id="status"></div>
@@ -600,6 +631,29 @@ function initTechApp() {
   const UPI_ID = "qmsmumbai@okicici";
   const PAYEE_NAME = "Kaarigar";
 
+  const TRADES_META = {
+    plumbing: { label:"Plumber", icon:"plumbing", color:"#2F6FA8" },
+    electrical: { label:"Electrician", icon:"bolt", color:"#C77D1E" },
+    carpentry: { label:"Carpenter", icon:"handyman", color:"#8B5E3C" },
+    ac_technician: { label:"AC Technician", icon:"ac_unit", color:"#2E9BB0" },
+    ro_water: { label:"RO / Water Purifier", icon:"water_drop", color:"#1E88A8" },
+    washing_machine: { label:"Washing Machine", icon:"local_laundry_service", color:"#6B5CA5" },
+    refrigerator: { label:"Refrigerator", icon:"kitchen", color:"#2E8B57" },
+    tv_repair: { label:"TV Repairing", icon:"tv", color:"#4A4A68" },
+    home_cleaning: { label:"Home Cleaning", icon:"cleaning_services", color:"#3FA796" },
+    pest_control: { label:"Pest Control", icon:"pest_control", color:"#7A8B3C" },
+    window_sliding: { label:"Window Sliding", icon:"blinds", color:"#5C7A9E" },
+    fabrication: { label:"Fabrication", icon:"precision_manufacturing", color:"#7A5C3C" },
+    pooja_pandit: { label:"Pooja Pandit", icon:"temple_hindu", color:"#B8722E" },
+    computer_repair: { label:"Computer Repair", icon:"computer", color:"#45577A" },
+    painter: { label:"Painter", icon:"format_paint", color:"#C15A4E" },
+    marriage_photography: { label:"Photography", icon:"photo_camera", color:"#A34D77" },
+    key_maker: { label:"Key Maker", icon:"key", color:"#9C7A2E" },
+    water_supplier: { label:"Water Supplier", icon:"local_shipping", color:"#2E7FA6" },
+    kabadi_wala: { label:"Kabadi Wala", icon:"recycling", color:"#6B8E4E" }
+  };
+  const ALL_TRADE_IDS = Object.keys(TRADES_META);
+
   let db = null;
   let fsDoc = null, fsSetDoc = null, fsServerTimestamp = null, fsGetDoc = null, fsIncrement = null;
 
@@ -672,6 +726,128 @@ function initTechApp() {
     const ready = nameEl.value.trim() && phoneEl.value.trim() && selectedTrades.size > 0;
     toggleBtn.disabled = !ready && !online;
     hintEl.style.display = !ready && !online ? "block" : "none";
+  }
+
+  // ------------------------------------------------------------------
+  // Screen routing: first-time registration vs. returning technician summary
+  // ------------------------------------------------------------------
+  const techLoadingEl = document.getElementById("tech-loading");
+  const techRegistrationEl = document.getElementById("tech-registration");
+  const techSummaryEl = document.getElementById("tech-summary");
+  const techAddServiceEl = document.getElementById("tech-addservice");
+  const btnAddService = document.getElementById("btn-add-service");
+
+  function showRegistration() {
+    techLoadingEl.style.display = "none";
+    techRegistrationEl.style.display = "block";
+    techSummaryEl.style.display = "none";
+    techAddServiceEl.style.display = "none";
+    toggleBtn.style.display = "block";
+    renderTrades();
+  }
+
+  function renderSummaryTrades() {
+    document.getElementById("summary-trades").innerHTML = Array.from(selectedTrades).map((id) => {
+      const t = TRADES_META[id] || { label: id, icon: "handyman", color: "#1C2541" };
+      return `<div style="display:flex; align-items:center; gap:6px; background:${t.color}18; border:1px solid ${t.color}55; padding:6px 10px; border-radius:999px;">
+        <span class="msr" style="font-size:15px; color:${t.color}">${t.icon}</span>
+        <span style="font-size:12.5px; font-weight:600; color:#1C2541">${t.label}</span>
+      </div>`;
+    }).join("");
+  }
+
+  function updateAddServiceButtonState() {
+    const canAdd = selectedTrades.size < MAX_TRADES && !online;
+    btnAddService.disabled = !canAdd;
+    btnAddService.style.opacity = canAdd ? "1" : "0.4";
+    btnAddService.style.cursor = canAdd ? "pointer" : "not-allowed";
+  }
+
+  function showSummary() {
+    techLoadingEl.style.display = "none";
+    techRegistrationEl.style.display = "none";
+    techSummaryEl.style.display = "block";
+    techAddServiceEl.style.display = "none";
+    document.getElementById("summary-name").textContent = nameEl.value.trim() || "(no name saved)";
+    document.getElementById("summary-phone").textContent = phoneEl.value.trim();
+    renderSummaryTrades();
+    updateAddServiceButtonState();
+    toggleBtn.style.display = "block";
+    updateToggleState();
+  }
+
+  let addServiceChoice = null;
+  function renderAddServiceTrades() {
+    const container = document.getElementById("addservice-trades");
+    const available = ALL_TRADE_IDS.filter((id) => !selectedTrades.has(id));
+    container.innerHTML = available.map((id) => {
+      const t = TRADES_META[id];
+      return `<button type="button" class="trade-chip addservice-chip" data-trade="${id}" style="--accent:${t.color}"><span class="msr">${t.icon}</span> ${t.label}</button>`;
+    }).join("");
+    container.querySelectorAll(".addservice-chip").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        addServiceChoice = btn.dataset.trade;
+        container.querySelectorAll(".addservice-chip").forEach((b) => {
+          const active = b.dataset.trade === addServiceChoice;
+          b.classList.toggle("active", active);
+          b.style.background = active ? b.style.getPropertyValue("--accent") : "transparent";
+        });
+        document.getElementById("btn-addservice-confirm").disabled = false;
+      });
+    });
+  }
+
+  btnAddService.addEventListener("click", () => {
+    if (selectedTrades.size >= MAX_TRADES || online) return;
+    addServiceChoice = null;
+    document.getElementById("addservice-name").textContent = nameEl.value.trim();
+    document.getElementById("addservice-phone").textContent = phoneEl.value.trim();
+    renderAddServiceTrades();
+    document.getElementById("btn-addservice-confirm").disabled = true;
+    techSummaryEl.style.display = "none";
+    techAddServiceEl.style.display = "block";
+    toggleBtn.style.display = "none";
+  });
+
+  document.getElementById("btn-addservice-back").addEventListener("click", () => {
+    techAddServiceEl.style.display = "none";
+    showSummary();
+  });
+
+  document.getElementById("btn-addservice-confirm").addEventListener("click", async () => {
+    if (!addServiceChoice || !db) return;
+    const btn = document.getElementById("btn-addservice-confirm");
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+    selectedTrades.add(addServiceChoice);
+    try {
+      await fsSetDoc(fsDoc(db, "technicians", techId()), { trades: Array.from(selectedTrades) }, { merge: true });
+    } catch (e) {
+      showStatus("err", "⚠ Couldn't save: " + e.message);
+    }
+    btn.textContent = "Confirm";
+    techAddServiceEl.style.display = "none";
+    showSummary();
+  });
+
+  async function loadProfileAndRoute() {
+    const savedPhone = phoneEl.value.trim();
+    if (!savedPhone || !db || !fsGetDoc) { showRegistration(); return; }
+    try {
+      const snap = await fsGetDoc(fsDoc(db, "technicians", techId()));
+      if (snap.exists()) {
+        const data = snap.data();
+        if (Array.isArray(data.trades) && data.trades.length >= 1) {
+          if (data.name) { nameEl.value = data.name; localStorage.setItem("kaarigar_name", data.name); }
+          selectedTrades.clear();
+          data.trades.forEach((t) => selectedTrades.add(t));
+          techIsNew = false;
+          showSummary();
+          return;
+        }
+      }
+    } catch (e) {}
+    showRegistration();
   }
 
   function showStatus(kind, html) { statusEl.className = "status-box show " + kind; statusEl.innerHTML = html; }
@@ -808,6 +984,7 @@ function initTechApp() {
     nameEl.disabled = online;
     phoneEl.disabled = online;
     tradeButtons.forEach((b) => (b.style.pointerEvents = online ? "none" : "auto"));
+    if (btnAddService) updateAddServiceButtonState();
     if (online) goOnline(); else goOffline();
   });
 
@@ -818,6 +995,7 @@ function initTechApp() {
   const configNote = document.getElementById("config-note");
   if (!isConfigured) {
     configNote.textContent = "⚠ Firebase not configured yet — edit firebaseConfig in index.html";
+    showRegistration();
   } else {
     (async () => {
       try {
@@ -827,9 +1005,11 @@ function initTechApp() {
         db = fs.getFirestore(app);
         fsDoc = fs.doc; fsSetDoc = fs.setDoc; fsServerTimestamp = fs.serverTimestamp; fsGetDoc = fs.getDoc; fsIncrement = fs.increment;
         configNote.style.display = "none";
+        await loadProfileAndRoute();
       } catch (e) {
         configNote.textContent = "⚠ Couldn't load Firebase (check internet connection): " + e.message;
         console.error("Firebase load failed:", e);
+        showRegistration();
       }
     })();
   }
