@@ -1,4 +1,4 @@
-const CACHE = "kaarigar-merged-v5";
+const CACHE = "kaarigar-merged-v7";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./splash.jpg"];
 
 self.addEventListener("install", (e) => {
