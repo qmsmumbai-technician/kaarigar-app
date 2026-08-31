@@ -305,6 +305,7 @@
       <button type="button" class="trade-chip" data-trade="key_maker" style="--accent:#9C7A2E"><span class="msr">key</span> Key Maker</button>
       <button type="button" class="trade-chip" data-trade="water_supplier" style="--accent:#2E7FA6"><span class="msr">local_shipping</span> Water Supplier</button>
       <button type="button" class="trade-chip" data-trade="kabadi_wala" style="--accent:#6B8E4E"><span class="msr">recycling</span> Kabadi Wala</button>
+      <button type="button" class="trade-chip" data-trade="kadiya_mason" style="--accent:#A0522D"><span class="msr">construction</span> Kadiya - Mason</button>
     </div>
     <p class="hint" id="trade-hint">0 / 2 selected</p>
     </div>
@@ -395,7 +396,8 @@ function initUserApp() {
     { id:"marriage_photography", label:"Photography", icon:"photo_camera", color:"#A34D77" },
     { id:"key_maker", label:"Key Maker", icon:"key", color:"#9C7A2E" },
     { id:"water_supplier", label:"Water Supplier", icon:"local_shipping", color:"#2E7FA6" },
-    { id:"kabadi_wala", label:"Kabadi Wala", icon:"recycling", color:"#6B8E4E" }
+    { id:"kabadi_wala", label:"Kabadi Wala", icon:"recycling", color:"#6B8E4E" },
+    { id:"kadiya_mason", label:"Kadiya - Mason", icon:"construction", color:"#A0522D" }
   ];
   const TRADE_MAP = Object.fromEntries(TRADES.map(t => [t.id, t]));
   // A technician stays visible for up to VISIBILITY_WINDOW_MS after their last
@@ -686,7 +688,8 @@ function initTechApp() {
     marriage_photography: { label:"Photography", icon:"photo_camera", color:"#A34D77" },
     key_maker: { label:"Key Maker", icon:"key", color:"#9C7A2E" },
     water_supplier: { label:"Water Supplier", icon:"local_shipping", color:"#2E7FA6" },
-    kabadi_wala: { label:"Kabadi Wala", icon:"recycling", color:"#6B8E4E" }
+    kabadi_wala: { label:"Kabadi Wala", icon:"recycling", color:"#6B8E4E" },
+    kadiya_mason: { label:"Kadiya - Mason", icon:"construction", color:"#A0522D" }
   };
   const ALL_TRADE_IDS = Object.keys(TRADES_META);
 
