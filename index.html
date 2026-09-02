@@ -530,7 +530,6 @@ function initUserApp() {
     const coords = userCoords || DEFAULT_COORDS;
     const results = [];
     allDocs.forEach((data) => {
-      if (!data.online) return;
       if (trade !== "__all__" && (!Array.isArray(data.trades) || !data.trades.includes(trade))) return;
       if (typeof data.lat !== "number" || typeof data.lng !== "number") return;
       const updatedAt = data.updatedAt && data.updatedAt.toMillis ? data.updatedAt.toMillis() : (data.updatedAt || 0);
@@ -538,7 +537,10 @@ function initUserApp() {
       if (ageMs > VISIBILITY_WINDOW_MS) return;
       const distance = haversineKm(coords, { lat: data.lat, lng: data.lng });
       if (distance > maxRange) return;
-      results.push({ ...data, distance, ageMs, isLive: ageMs <= LIVE_THRESHOLD_MS });
+      // Three status tiers: LIVE (online, recent) / RECENT (online, stale ping) / OFFLINE (explicitly went offline)
+      const isOnlineFlag = data.online === true;
+      const isLive = isOnlineFlag && ageMs <= LIVE_THRESHOLD_MS;
+      results.push({ ...data, distance, ageMs, isLive, isOnlineFlag });
     });
     return results;
   }
@@ -592,7 +594,9 @@ function initUserApp() {
               <div class="live-row">${
                 t.isLive
                   ? '<span class="live-dot"></span><span class="live-label">LIVE · ONLINE</span>'
-                  : `<span class="recent-dot"></span><span class="recent-label">Active ${timeAgo(t.ageMs)}</span>`
+                  : t.isOnlineFlag
+                    ? `<span class="recent-dot"></span><span class="recent-label">Active ${timeAgo(t.ageMs)}</span>`
+                    : `<span class="recent-dot"></span><span class="recent-label">Was online, now offline · ${timeAgo(t.ageMs)}</span>`
               }</div>
             </div>
           </div>
@@ -994,11 +998,11 @@ function initTechApp() {
   }
 
   async function goOffline() {
-    // Intentionally NOT writing online:false here. Per the product rule, a
-    // technician stays discoverable at their last known location/number
-    // even after going offline, until the User app's own 8-hour recency
-    // window naturally expires it. This only stops the local GPS broadcast
-    // on this device — it does not hide the technician from users.
+    // Mark explicitly offline, but do NOT remove from user searches — the
+    // User app still shows them (as "Was online, now offline") until the
+    // 8-hour recency window naturally expires. This just distinguishes
+    // "deliberately went offline" from "still broadcasting."
+    if (db) { try { await fsSetDoc(fsDoc(db, "technicians", techId()), { online: false, updatedAt: fsServerTimestamp() }, { merge: true }); } catch {} }
     if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
     showStatus("warn", "Location updates paused — you'll still be shown to nearby users using your last known location for a while.");
   }
