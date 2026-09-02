@@ -994,9 +994,13 @@ function initTechApp() {
   }
 
   async function goOffline() {
-    if (db) { try { await fsSetDoc(fsDoc(db, "technicians", techId()), { online: false, updatedAt: fsServerTimestamp() }, { merge: true }); } catch {} }
+    // Intentionally NOT writing online:false here. Per the product rule, a
+    // technician stays discoverable at their last known location/number
+    // even after going offline, until the User app's own 8-hour recency
+    // window naturally expires it. This only stops the local GPS broadcast
+    // on this device — it does not hide the technician from users.
     if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-    showStatus("warn", "You're offline — hidden from nearby users.");
+    showStatus("warn", "Location updates paused — you'll still be shown to nearby users using your last known location for a while.");
   }
 
   function goOnline() {
