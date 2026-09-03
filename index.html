@@ -87,10 +87,11 @@
   .hero-live span.count { font-family:'JetBrains Mono',monospace; font-weight:600; font-size:13px; }
 
   .section-title { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:19px; color:#1C2541; margin:0 0 12px; }
-  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
-  .tile { display:flex; flex-direction:column; align-items:center; gap:6px; background:#FBFAF6; border:none; border-radius:12px; padding:12px 4px; box-shadow:0 1px 3px rgba(28,37,65,.07); cursor:pointer; }
-  .tile .ic { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:19px; }
-  .tile .lbl { font-size:10px; font-weight:600; color:#20242C; text-align:center; line-height:1.2; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+  .tile { display:flex; flex-direction:column; align-items:center; gap:8px; background:#FBFAF6; border:none; border-radius:14px; padding:10px 8px 12px; box-shadow:0 1px 3px rgba(28,37,65,.07); cursor:pointer; }
+  .tile .ic { width:100%; aspect-ratio:1; border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .tile .ic img { width:100%; height:100%; object-fit:cover; display:block; }
+  .tile .lbl { font-size:11.5px; font-weight:600; color:#20242C; text-align:center; line-height:1.25; }
 
   .emergency { display:flex; align-items:center; gap:14px; background:linear-gradient(135deg,#D65A3A,#C7401E); border-radius:14px; padding:16px 18px; color:#fff; margin-bottom:20px; cursor:pointer; border:none; width:100%; text-align:left; }
   .emergency .siren { font-size:26px; }
@@ -450,7 +451,7 @@ function initUserApp() {
 
   tradeGrid.innerHTML = TRADES.map(t => `
     <button class="tile" data-trade="${t.id}">
-      <div class="ic" style="background:linear-gradient(160deg,${t.color},${t.color}CC);color:#fff"><span class="msr" style="font-size:22px">${t.icon}</span></div>
+      <div class="ic"><img src="trade-photos/${t.id}.jpg" alt="${t.label}" loading="lazy" /></div>
       <div class="lbl">${t.label}</div>
     </button>
   `).join("");
