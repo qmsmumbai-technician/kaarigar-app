@@ -451,7 +451,7 @@ function initUserApp() {
 
   tradeGrid.innerHTML = TRADES.map(t => `
     <button class="tile" data-trade="${t.id}">
-      <div class="ic"><img src="trade-photos/${t.id}.jpg" alt="${t.label}" loading="lazy" /></div>
+      <div class="ic"><img src="trade.photos/${t.id}.jpg" alt="${t.label}" loading="lazy" /></div>
       <div class="lbl">${t.label}</div>
     </button>
   `).join("");
