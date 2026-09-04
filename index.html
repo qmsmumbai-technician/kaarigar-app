@@ -559,16 +559,31 @@ function initUserApp() {
     const trade = isAll ? null : TRADE_MAP[currentTrade];
 
     let usedRange = DEFAULT_RANGE_KM;
-    let sorted = computeFiltered(currentTrade, DEFAULT_RANGE_KM);
-    if (sorted.length === 0) {
+    let pool = computeFiltered(currentTrade, DEFAULT_RANGE_KM);
+    if (pool.length === 0) {
       const expanded = computeFiltered(currentTrade, EXPANDED_RANGE_KM);
-      if (expanded.length > 0) { sorted = expanded; usedRange = EXPANDED_RANGE_KM; }
+      if (expanded.length > 0) { pool = expanded; usedRange = EXPANDED_RANGE_KM; }
     }
-    sorted = sorted.sort((a,b) => sortMode === "nearest" ? a.distance - b.distance : (b.rating||0) - (a.rating||0));
+
+    // Always pick nearest-first for selection purposes. For a specific trade
+    // (not the all-trades "Need Help Now" view), cap the pool to the nearest
+    // 3 — online or recently-offline both count toward this. The "Need Help
+    // Now" view is intentionally left uncapped, unchanged.
+    const byNearest = [...pool].sort((a, b) => a.distance - b.distance);
+    const MAX_SHOWN = 3;
+    const isCapped = !isAll && byNearest.length > MAX_SHOWN;
+    const selected = isCapped ? byNearest.slice(0, MAX_SHOWN) : byNearest;
+
+    // Display sort mode still applies to whichever set is actually shown —
+    // "Nearest" keeps nearest-first order, "Top rated" re-sorts that same set by rating.
+    let sorted = [...selected].sort((a,b) => sortMode === "nearest" ? a.distance - b.distance : (b.rating||0) - (a.rating||0));
 
     listHeading.textContent = isAll ? `${sorted.length} technicians within ${usedRange} km` : `${sorted.length} ${trade.label.toLowerCase()} within ${usedRange} km`;
     if (usedRange !== DEFAULT_RANGE_KM) {
       listHeading.innerHTML += `<div style="font-size:11px; color:#C77D1E; font-weight:600; font-family:'JetBrains Mono',monospace; margin-top:4px;">None within 2 km — showing up to 3.5 km instead</div>`;
+    }
+    if (isCapped) {
+      listHeading.innerHTML += `<div style="font-size:11px; color:#8891A0; font-weight:600; font-family:'JetBrains Mono',monospace; margin-top:4px;">Showing nearest 3 of ${byNearest.length}</div>`;
     }
 
     if (sorted.length === 0) {
