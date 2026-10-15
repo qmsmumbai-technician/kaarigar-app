@@ -32,7 +32,8 @@
     font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .2em; color: #C77D1E; margin: 0 0 36px;
   }
   #role-picker .welcome-hi {
-    max-width: 360px; margin: 0 0 22px;
+    position: absolute; top: max(14px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+    width: 90%; max-width: 360px;
   }
   #role-picker .welcome-hi .greet {
     font-family: 'Inter', sans-serif; font-weight: 700; font-size: 21px; color: #1C2541; margin: 0 0 8px;
@@ -202,7 +203,6 @@
     <p>अगर आप कस्टमर हैं तो <b>"For User"</b> बटन दबाएं और आपको जो सर्विस चाहिए वो सेलेक्ट करें और कारीगर को कॉल करें।</p>
     <p>अगर आप कारीगर टेक्नीशियन हैं तो <b>"For Kaarigar Technician"</b> बटन दबाएं।</p>
   </div>
-  <audio id="welcome-audio" src="welcome-voice.mp3" preload="auto"></audio>
   <h1>KAARIGAR</h1>
   <p class="tagline">CONNECTING TECHNICIANS FOR HOME SERVICE</p>
   <button class="role-btn" id="btn-role-user">
@@ -1118,13 +1118,7 @@ setTimeout(() => {
   setTimeout(() => splash.remove(), 450);
 }, 2500);
 
-function stopWelcomeAudio() {
-  const a = document.getElementById("welcome-audio");
-  if (a) { a.pause(); a.currentTime = 0; }
-}
-
 function startRole(role) {
-  stopWelcomeAudio();
   localStorage.setItem("kaarigar_role", role);
   document.getElementById("role-picker").style.display = "none";
   if (role === "user") {
@@ -1151,24 +1145,6 @@ if (savedRole === "user" || savedRole === "technician") {
   startRole(savedRole);
 } else {
   document.getElementById("role-picker").style.display = "flex";
-  const welcomeAudio = document.getElementById("welcome-audio");
-  if (welcomeAudio) {
-    welcomeAudio.play().catch(() => {
-      // Some browsers block autoplay with sound until the user has
-      // interacted with the page at least once. If so, play on first tap
-      // anywhere on the role-picker screen (but a button tap still stops it).
-      const tryPlayOnce = () => {
-        document.removeEventListener("touchstart", tryPlayOnce);
-        document.removeEventListener("click", tryPlayOnce);
-        // Don't start it if a role button already navigated away in the same tap.
-        if (document.getElementById("role-picker").style.display !== "none") {
-          welcomeAudio.play().catch(() => {});
-        }
-      };
-      document.addEventListener("touchstart", tryPlayOnce, { once: true });
-      document.addEventListener("click", tryPlayOnce, { once: true });
-    });
-  }
 }
 </script>
 </body>
