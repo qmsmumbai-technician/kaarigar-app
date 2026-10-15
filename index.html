@@ -351,6 +351,10 @@
     <label for="phone">Phone number (users will call this)</label>
     <input type="tel" id="phone" placeholder="+9198XXXXXXXX" />
 
+    <label for="phone-confirm">Re-enter mobile number</label>
+    <input type="tel" id="phone-confirm" placeholder="Type your number again" />
+    <p class="hint" id="phone-match-error" style="display:none; color:#C7401E; font-weight:600;">⚠ The two numbers don't match. Please type your number again.</p>
+
     <label style="margin-top:6px">Your trades (choose up to 2)</label>
     <div class="trades" id="trades">
       <button type="button" class="trade-chip" data-trade="plumbing" style="--accent:#2F6FA8"><span class="msr">plumbing</span> Plumber</button>
@@ -378,6 +382,7 @@
       <button type="button" class="trade-chip" data-trade="upholstery_repair" style="--accent:#8B4049"><span class="msr">chair</span> Upholstery (Sofa/Chair) Repairing</button>
     </div>
     <p class="hint" id="trade-hint">0 / 2 selected</p>
+    <p class="hint" id="trade-confirm-text" style="display:none; color:#1C2541; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; margin-top:6px;"></p>
     </div>
 
     <!-- SUMMARY (returning, already-registered technician) -->
@@ -822,7 +827,37 @@ function initTechApp() {
   nameEl.value = localStorage.getItem("kaarigar_name") || "";
   phoneEl.value = localStorage.getItem("kaarigar_phone") || "";
   nameEl.addEventListener("input", () => { localStorage.setItem("kaarigar_name", nameEl.value); updateToggleState(); });
-  phoneEl.addEventListener("input", () => { localStorage.setItem("kaarigar_phone", phoneEl.value); updateToggleState(); });
+
+  const phoneConfirmEl = document.getElementById("phone-confirm");
+  const phoneMatchErrorEl = document.getElementById("phone-match-error");
+  function phoneDigitsOf(v) { return (v || "").replace(/\D/g, ""); }
+
+  function checkPhoneMatch() {
+    const a = phoneDigitsOf(phoneEl.value);
+    const b = phoneDigitsOf(phoneConfirmEl.value);
+    if (!b) {
+      phoneMatchErrorEl.style.display = "none";
+      updateToggleState();
+      return;
+    }
+    if (b.length >= a.length && a !== b) {
+      phoneMatchErrorEl.style.display = "block";
+      phoneEl.value = "";
+      phoneConfirmEl.value = "";
+      localStorage.removeItem("kaarigar_phone");
+      phoneEl.focus();
+    } else {
+      phoneMatchErrorEl.style.display = "none";
+    }
+    updateToggleState();
+  }
+  phoneEl.addEventListener("input", () => {
+    localStorage.setItem("kaarigar_phone", phoneEl.value);
+    phoneConfirmEl.value = "";
+    phoneMatchErrorEl.style.display = "none";
+    updateToggleState();
+  });
+  phoneConfirmEl.addEventListener("input", checkPhoneMatch);
 
   function techId() {
     const digits = (phoneEl.value || "").replace(/\D/g, "");
@@ -842,6 +877,14 @@ function initTechApp() {
       btn.classList.toggle("disabled", atLimit);
     });
     tradeHint.textContent = `${selectedTrades.size} / ${MAX_TRADES} selected`;
+    const tradeConfirmEl = document.getElementById("trade-confirm-text");
+    if (selectedTrades.size > 0) {
+      const names = Array.from(selectedTrades).map((id) => (TRADES_META[id] || { label: id }).label).join(", ");
+      tradeConfirmEl.textContent = `You have selected: ${names}. Please confirm.`;
+      tradeConfirmEl.style.display = "block";
+    } else {
+      tradeConfirmEl.style.display = "none";
+    }
     updateToggleState();
   }
   tradeButtons.forEach((btn) => {
@@ -865,7 +908,14 @@ function initTechApp() {
   renderTrades();
 
   function updateToggleState() {
-    const ready = nameEl.value.trim() && phoneEl.value.trim() && selectedTrades.size > 0;
+    let ready = nameEl.value.trim() && phoneEl.value.trim() && selectedTrades.size > 0;
+    const regScreenEl = document.getElementById("tech-registration");
+    const onRegistrationScreen = regScreenEl && regScreenEl.style.display !== "none";
+    if (onRegistrationScreen && ready) {
+      const a = phoneDigitsOf(phoneEl.value);
+      const b = phoneDigitsOf(phoneConfirmEl.value);
+      if (!b || a !== b) ready = false;
+    }
     toggleBtn.disabled = !ready && !online;
     hintEl.style.display = !ready && !online ? "block" : "none";
   }
