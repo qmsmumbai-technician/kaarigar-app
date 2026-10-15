@@ -382,6 +382,9 @@
 
     <!-- SUMMARY (returning, already-registered technician) -->
     <div id="tech-summary" style="display:none">
+      <div class="explain-btn-row">
+        <button type="button" class="explain-btn" id="btn-open-explainer-2"><span class="msr">play_circle</span> ऐप समझिए</button>
+      </div>
       <h2>Your status</h2>
       <p class="sub">Going online shares your live location with nearby users.</p>
       <div style="background:#FBFAF6; border-radius:10px; padding:16px; box-shadow:0 1px 3px rgba(28,37,65,0.08); margin-bottom:16px;">
@@ -1171,6 +1174,7 @@ const techExplainer = document.getElementById("tech-explainer");
 const explainerAudio = document.getElementById("tech-explainer-audio");
 const btnListenExplainer = document.getElementById("btn-listen-explainer");
 const btnOpenExplainer = document.getElementById("btn-open-explainer");
+const btnOpenExplainer2 = document.getElementById("btn-open-explainer-2");
 const btnCloseExplainer = document.getElementById("btn-close-explainer");
 
 function resetListenBtn() {
@@ -1178,6 +1182,11 @@ function resetListenBtn() {
 }
 if (btnOpenExplainer) {
   btnOpenExplainer.addEventListener("click", () => {
+    techExplainer.style.display = "flex";
+  });
+}
+if (btnOpenExplainer2) {
+  btnOpenExplainer2.addEventListener("click", () => {
     techExplainer.style.display = "flex";
   });
 }
