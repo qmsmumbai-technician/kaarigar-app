@@ -399,7 +399,10 @@
 
     <!-- ADD SERVICE (pick one more trade, up to the 2-service limit) -->
     <div id="tech-addservice" style="display:none">
-      <button class="back-btn" id="btn-addservice-back" style="display:flex; align-items:center; gap:4px; background:none; border:none; color:#1C2541; font-size:14px; padding:0; margin-bottom:16px; cursor:pointer;"><span class="msr" style="font-size:16px">arrow_back</span> Back</button>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <button class="back-btn" id="btn-addservice-back" style="display:flex; align-items:center; gap:4px; background:none; border:none; color:#1C2541; font-size:14px; padding:0; margin-bottom:0; cursor:pointer;"><span class="msr" style="font-size:16px">arrow_back</span> Back</button>
+        <button type="button" class="explain-btn" id="btn-open-explainer-3"><span class="msr">play_circle</span> ऐप समझिए</button>
+      </div>
       <h2>Add a service</h2>
       <p class="sub">Pick one more trade to offer alongside your current one.</p>
       <div style="background:#FBFAF6; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:#8891A0;">
@@ -1175,6 +1178,7 @@ const explainerAudio = document.getElementById("tech-explainer-audio");
 const btnListenExplainer = document.getElementById("btn-listen-explainer");
 const btnOpenExplainer = document.getElementById("btn-open-explainer");
 const btnOpenExplainer2 = document.getElementById("btn-open-explainer-2");
+const btnOpenExplainer3 = document.getElementById("btn-open-explainer-3");
 const btnCloseExplainer = document.getElementById("btn-close-explainer");
 
 function resetListenBtn() {
@@ -1187,6 +1191,11 @@ if (btnOpenExplainer) {
 }
 if (btnOpenExplainer2) {
   btnOpenExplainer2.addEventListener("click", () => {
+    techExplainer.style.display = "flex";
+  });
+}
+if (btnOpenExplainer3) {
+  btnOpenExplainer3.addEventListener("click", () => {
     techExplainer.style.display = "flex";
   });
 }
