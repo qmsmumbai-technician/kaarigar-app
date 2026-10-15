@@ -31,6 +31,17 @@
   #role-picker p.tagline {
     font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .2em; color: #C77D1E; margin: 0 0 36px;
   }
+  #role-picker .welcome-hi {
+    max-width: 360px; margin: 0 0 22px;
+  }
+  #role-picker .welcome-hi .greet {
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 21px; color: #1C2541; margin: 0 0 8px;
+  }
+  #role-picker .welcome-hi p {
+    font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; line-height: 1.45; color: #1C2541; margin: 0 0 10px;
+  }
+  #role-picker .welcome-hi p:last-child { margin-bottom: 0; }
+  #role-picker .welcome-hi b { color: #C77D1E; }
   .role-btn {
     width: 100%; max-width: 320px; padding: 20px; border-radius: 14px; border: none; margin-bottom: 16px;
     display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer;
@@ -186,6 +197,12 @@
 </div>
 
 <div id="role-picker">
+  <div class="welcome-hi">
+    <div class="greet">नमस्ते !</div>
+    <p>अगर आप कस्टमर हैं तो <b>"For User"</b> बटन दबाएं और आपको जो सर्विस चाहिए वो सेलेक्ट करें और कारीगर को कॉल करें।</p>
+    <p>अगर आप कारीगर टेक्नीशियन हैं तो <b>"For Kaarigar Technician"</b> बटन दबाएं।</p>
+  </div>
+  <audio id="welcome-audio" src="welcome-voice.mp3" preload="auto"></audio>
   <h1>KAARIGAR</h1>
   <p class="tagline">CONNECTING TECHNICIANS FOR HOME SERVICE</p>
   <button class="role-btn" id="btn-role-user">
@@ -1101,7 +1118,13 @@ setTimeout(() => {
   setTimeout(() => splash.remove(), 450);
 }, 2500);
 
+function stopWelcomeAudio() {
+  const a = document.getElementById("welcome-audio");
+  if (a) { a.pause(); a.currentTime = 0; }
+}
+
 function startRole(role) {
+  stopWelcomeAudio();
   localStorage.setItem("kaarigar_role", role);
   document.getElementById("role-picker").style.display = "none";
   if (role === "user") {
@@ -1128,6 +1151,24 @@ if (savedRole === "user" || savedRole === "technician") {
   startRole(savedRole);
 } else {
   document.getElementById("role-picker").style.display = "flex";
+  const welcomeAudio = document.getElementById("welcome-audio");
+  if (welcomeAudio) {
+    welcomeAudio.play().catch(() => {
+      // Some browsers block autoplay with sound until the user has
+      // interacted with the page at least once. If so, play on first tap
+      // anywhere on the role-picker screen (but a button tap still stops it).
+      const tryPlayOnce = () => {
+        document.removeEventListener("touchstart", tryPlayOnce);
+        document.removeEventListener("click", tryPlayOnce);
+        // Don't start it if a role button already navigated away in the same tap.
+        if (document.getElementById("role-picker").style.display !== "none") {
+          welcomeAudio.play().catch(() => {});
+        }
+      };
+      document.addEventListener("touchstart", tryPlayOnce, { once: true });
+      document.addEventListener("click", tryPlayOnce, { once: true });
+    });
+  }
 }
 </script>
 </body>
