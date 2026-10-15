@@ -597,11 +597,13 @@ function initUserApp() {
     screenList.style.display = "block";
     listContent.innerHTML = `<div class="searching"><div class="spinner"></div>SEARCHING LIVE DATABASE…</div>`;
     renderList();
+    window.scrollTo(0, 0);
   }
   function closeTrade() {
     currentTrade = null;
     screenList.style.display = "none";
     screenServices.style.display = "block";
+    window.scrollTo(0, 0);
   }
 
   function computeFiltered(trade, maxRange) {
