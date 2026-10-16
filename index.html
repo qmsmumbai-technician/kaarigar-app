@@ -173,6 +173,13 @@
   .recent-dot { width:6px; height:6px; border-radius:50%; background:#C77D1E; }
   .recent-label { font-size:10px; color:#8B5E1E; font-weight:600; letter-spacing:.05em; }
   .trade-tag { font-size:9px; color:#8891A0; font-family:'JetBrains Mono',monospace; margin-top:1px; }
+  .trade-pill-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .trade-pill {
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:11px; font-weight:600; font-family:'Inter',sans-serif;
+    padding:3px 9px; border-radius:999px;
+    border:1px solid currentColor;
+  }
   .meta-row { display:flex; gap:12px; margin-top:8px; color:#8891A0; font-family:'JetBrains Mono',monospace; font-size:13px; flex-wrap:wrap; }
   .meta-row span { color:#20242C; display:flex; align-items:center; gap:4px; }
   .call-btn { margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px; background:#F2A93B; color:#1C2541; font-weight:700; font-size:14px; padding:11px; border-radius:8px; text-decoration:none; font-family:'Inter',sans-serif; }
@@ -702,7 +709,10 @@ function initUserApp() {
               }</div>
             </div>
           </div>
-          ${isAll ? `<div class="trade-tag">${(t.trades||[]).map(id => TRADE_MAP[id]?.label || id).join(" · ")}</div>` : ""}
+          ${isAll ? `<div class="trade-pill-row">${(t.trades||[]).map(id => {
+            const meta = TRADE_MAP[id] || { label: id, color: "#8891A0" };
+            return `<span class="trade-pill" style="color:${meta.color}">${meta.label}</span>`;
+          }).join("")}</div>` : ""}
           <div class="meta-row">
             <span>📍 ${t.distance.toFixed(2)} km</span>
             <span>⏱ ~${etaMin(t.distance)} min</span>
