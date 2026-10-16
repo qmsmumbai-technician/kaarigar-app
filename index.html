@@ -1140,7 +1140,7 @@ function initTechApp() {
     }
     try {
       await fsSetDoc(fsDoc(db, "technicians", techId()), payload, { merge: true });
-      showStatus("ok", `<span class="dot"></span>Live — lat ${lat.toFixed(4)}, lng ${lng.toFixed(4)}<br/>Last update: ${new Date().toLocaleTimeString()}`);
+      showStatus("ok", `<span class="dot"></span>Live — your location is visible to nearby customers<br/>Last update: ${new Date().toLocaleTimeString()}`);
     } catch (e) {
       showStatus("err", "⚠ Couldn't write to Firestore: " + e.message);
     }
