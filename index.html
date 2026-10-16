@@ -349,10 +349,11 @@
     <input type="text" id="name" placeholder="e.g. Ramesh Yadav" />
 
     <label for="phone">Phone number (users will call this)</label>
-    <input type="tel" id="phone" placeholder="+9198XXXXXXXX" />
+    <input type="tel" id="phone" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric" pattern="[0-9]*" />
+    <p class="hint" id="phone-length-error" style="display:none; color:#C7401E; font-weight:600;">⚠ Please enter a valid 10-digit mobile number.</p>
 
     <label for="phone-confirm">Re-enter mobile number</label>
-    <input type="tel" id="phone-confirm" placeholder="Type your number again" />
+    <input type="tel" id="phone-confirm" placeholder="Type your number again" maxlength="10" inputmode="numeric" pattern="[0-9]*" />
     <p class="hint" id="phone-match-error" style="display:none; color:#C7401E; font-weight:600;">⚠ The two numbers don't match. Please type your number again.</p>
 
     <label style="margin-top:6px">Your trades (choose up to 2)</label>
@@ -830,7 +831,8 @@ function initTechApp() {
 
   const phoneConfirmEl = document.getElementById("phone-confirm");
   const phoneMatchErrorEl = document.getElementById("phone-match-error");
-  function phoneDigitsOf(v) { return (v || "").replace(/\D/g, ""); }
+  const phoneLengthErrorEl = document.getElementById("phone-length-error");
+  function phoneDigitsOf(v) { return (v || "").replace(/\D/g, "").slice(0, 10); }
 
   function checkPhoneMatch() {
     const a = phoneDigitsOf(phoneEl.value);
@@ -852,12 +854,20 @@ function initTechApp() {
     updateToggleState();
   }
   phoneEl.addEventListener("input", () => {
+    // Only 10 digits allowed — strip anything else as the kaarigar types.
+    const digits = phoneDigitsOf(phoneEl.value);
+    if (phoneEl.value !== digits) phoneEl.value = digits;
+    phoneLengthErrorEl.style.display = (digits.length > 0 && digits.length < 10) ? "block" : "none";
     localStorage.setItem("kaarigar_phone", phoneEl.value);
     phoneConfirmEl.value = "";
     phoneMatchErrorEl.style.display = "none";
     updateToggleState();
   });
-  phoneConfirmEl.addEventListener("input", checkPhoneMatch);
+  phoneConfirmEl.addEventListener("input", () => {
+    const digits = phoneDigitsOf(phoneConfirmEl.value);
+    if (phoneConfirmEl.value !== digits) phoneConfirmEl.value = digits;
+    checkPhoneMatch();
+  });
 
   function techId() {
     const digits = (phoneEl.value || "").replace(/\D/g, "");
@@ -914,7 +924,7 @@ function initTechApp() {
     if (onRegistrationScreen && ready) {
       const a = phoneDigitsOf(phoneEl.value);
       const b = phoneDigitsOf(phoneConfirmEl.value);
-      if (!b || a !== b) ready = false;
+      if (a.length !== 10 || !b || a !== b) ready = false;
     }
     toggleBtn.disabled = !ready && !online;
     hintEl.style.display = !ready && !online ? "block" : "none";
