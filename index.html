@@ -508,7 +508,7 @@ function initUserApp() {
   // captured update, even if they never explicitly went offline or closed the
   // app mid-day. Within LIVE_THRESHOLD_MS they're shown as truly "live"; beyond
   // that (but still within the window) they're shown as "active X ago" instead.
-  const LIVE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+  const LIVE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
   const VISIBILITY_WINDOW_MS = 8 * 60 * 60 * 1000; // 8 hours
   const STALE_MS = VISIBILITY_WINDOW_MS; // kept for compatibility with existing filter code below
   const DEFAULT_RANGE_KM = 2;
@@ -1126,6 +1126,7 @@ function initTechApp() {
           techIsNew = false;
           techVerified = data.verified === true;
           showSummary();
+          resumeIfWasOnline();
           return;
         }
       }
@@ -1261,19 +1262,51 @@ function initTechApp() {
     );
   }
 
-  toggleBtn.addEventListener("click", async () => {
-    if (!online) {
-      const status = await checkTrialStatus();
-      if (status.blocked) { showPaywall(); return; }
-    }
-    online = !online;
+  const WAS_ONLINE_KEY = "kaarigar_was_online";
+  function rememberOnline(v) { try { if (v) localStorage.setItem(WAS_ONLINE_KEY, "1"); else localStorage.removeItem(WAS_ONLINE_KEY); } catch {} }
+
+  function applyOnlineUI() {
     toggleBtn.textContent = online ? "Go Offline" : "Go Online";
     toggleBtn.classList.toggle("online", online);
     nameEl.disabled = online;
     phoneEl.disabled = online;
     tradeButtons.forEach((b) => (b.style.pointerEvents = online ? "none" : "auto"));
     if (btnAddService) updateAddServiceButtonState();
+    updateToggleState();
+  }
+
+  toggleBtn.addEventListener("click", async () => {
+    if (!online) {
+      const status = await checkTrialStatus();
+      if (status.blocked) { showPaywall(); return; }
+    }
+    online = !online;
+    rememberOnline(online);
+    applyOnlineUI();
     if (online) goOnline(); else goOffline();
+  });
+
+  // If the technician was online when he left the app, bring him back online
+  // automatically on reopen (no tap needed). Only "Go Offline" turns this off.
+  async function resumeIfWasOnline() {
+    let was = false;
+    try { was = localStorage.getItem(WAS_ONLINE_KEY) === "1"; } catch {}
+    if (!was || online) return;
+    const status = await checkTrialStatus();
+    if (status.blocked) { rememberOnline(false); showPaywall(); return; }
+    online = true;
+    applyOnlineUI();
+    lastWriteAt = 0;
+    goOnline();
+  }
+
+  // Coming back to the foreground: restart the GPS watch and send a fresh
+  // location straight away, so the LIVE badge returns without waiting.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || !online) return;
+    if (watchId != null) { try { navigator.geolocation.clearWatch(watchId); } catch {} watchId = null; }
+    lastWriteAt = 0;
+    goOnline();
   });
 
   // Intentionally NOT setting online:false on tab close/app close anymore.
