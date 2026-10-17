@@ -175,6 +175,7 @@
   .recent-label { font-size:10px; color:#8B5E1E; font-weight:600; letter-spacing:.05em; }
   .trade-tag { font-size:9px; color:#8891A0; font-family:'JetBrains Mono',monospace; margin-top:1px; }
   .verified-tick { display:inline-block; width:16px; height:16px; vertical-align:-3px; margin-left:5px; }
+  .verified-label { font-size:11px; font-weight:700; color:#2E8B57; margin-left:3px; vertical-align:1px; letter-spacing:.2px; white-space:nowrap; }
   .verify-card { background:#FBFAF6; border-radius:10px; padding:14px 16px; box-shadow:0 1px 3px rgba(28,37,65,0.08); margin-bottom:16px; border-left:4px solid #F2A93B; }
   .verify-card.done { border-left-color:#2E8B57; background:#EEF6F0; }
   .verify-card .v-title { font-weight:700; font-size:15px; color:#1C2541; display:flex; align-items:center; gap:6px; }
@@ -716,7 +717,7 @@ function initUserApp() {
           <div class="tech-top">
             <div class="avatar">${initials(t.name)}</div>
             <div style="flex:1;min-width:0">
-              <div class="tech-name">${t.name || "Unnamed technician"}${t.verified === true ? VERIFIED_TICK_SVG_USER : ""}</div>
+              <div class="tech-name">${t.name || "Unnamed technician"}${t.verified === true ? VERIFIED_TICK_SVG_USER + '<span class="verified-label">Verified</span>' : ""}</div>
               <div class="live-row">${
                 t.isLive
                   ? '<span class="live-dot"></span><span class="live-label">LIVE · ONLINE</span>'
