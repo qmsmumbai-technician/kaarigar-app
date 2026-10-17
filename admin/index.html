@@ -95,6 +95,7 @@
 </div>
 
 <script type="module">
+  const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const firebaseConfig = {
     apiKey: "AIzaSyCVp07idh5slisdnJ6MWXc439_mEp17cns",
     authDomain: "kaarigar-technician.firebaseapp.com",
@@ -141,7 +142,7 @@
               <div class="ph">${esc(r.id)}</div>
               <div class="tr">${esc((r.trades || []).join(", "))}</div></td>
           <td><span class="badge ${r.verified === true ? "b-yes" : "b-no"}">${r.verified === true ? "Verified" : "Unverified"}</span></td>
-          <td><a class="wa" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a></td>
+          <td><a class="wa" href="${IS_MOBILE ? "whatsapp://send?phone=" + esc(wa) : "https://wa.me/" + esc(wa)}"${IS_MOBILE ? "" : ' target="_blank" rel="noopener"'}>WhatsApp</a></td>
         </tr>`;
       }).join("");
     }
