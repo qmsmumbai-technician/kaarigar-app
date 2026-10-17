@@ -1,1 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kaarigar Admin</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; padding:16px; background:#F6F4EF; color:#1C2541; font-family:'Segoe UI',Arial,sans-serif; }
+  h1 { font-size:19px; margin:0 0 2px; }
+  p.sub { color:#5A6072; font-size:12.5px; margin:0 0 14px; }
+  .card { background:#fff; border-radius:10px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+  label { display:block; font-size:12.5px; font-weight:600; margin:10px 0 4px; }
+  input[type=text], input[type=email], input[type=password], select {
+    width:100%; padding:10px 12px; border:1px solid #D8D4C8; border-radius:8px; font-size:14px; background:#fff; color:#1C2541;
+  }
+  button { padding:10px 14px; border-radius:8px; border:none; font-size:13.5px; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  .b-main { background:#1C2541; color:#fff; }
+  .b-ok { background:#2E8B57; color:#fff; }
+  .b-warn { background:#C77D1E; color:#fff; }
+  .b-del { background:#C7401E; color:#fff; }
+  .b-ghost { background:#E9E5D9; color:#1C2541; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+  .row > input[type=text] { flex:1; min-width:140px; width:auto; }
+  .row > select { width:auto; }
+  .topbar { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px; }
+  table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+  th, td { text-align:left; padding:10px 8px; font-size:13px; border-bottom:1px solid #EEEAE0; vertical-align:top; }
+  th { background:#1C2541; color:#fff; font-weight:600; font-size:12px; }
+  tr:last-child td { border-bottom:none; }
+  .nm { font-weight:600; }
+  .ph { font-family:Consolas,monospace; color:#5A6072; font-size:12.5px; }
+  .tr { color:#8891A0; font-size:11.5px; margin-top:2px; }
+  .badge { display:inline-block; font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px; }
+  .b-yes { background:#DDF0E3; color:#1F6B42; }
+  .b-no  { background:#F7E6C8; color:#8A5A00; }
+  a.wa { display:inline-block; background:#25A244; color:#fff; text-decoration:none; font-size:12px; font-weight:700; padding:6px 9px; border-radius:7px; }
+  #status { margin-top:12px; font-size:13px; line-height:1.4; }
+  .ok { color:#2E8B57; } .err { color:#C7401E; } .muted { color:#8891A0; font-size:12px; }
+  #app { display:none; }
+</style>
+</head>
+<body>
 
+<div id="login" class="card" style="max-width:420px; margin:30px auto;">
+  <h1>Kaarigar Admin</h1>
+  <p class="sub">Sign in to verify or delete technicians.</p>
+  <label for="email">Email</label>
+  <input type="email" id="email" value="qmsmumbai@gmail.com" autocomplete="username" />
+  <label for="password">Password</label>
+  <input type="password" id="password" autocomplete="current-password" />
+  <div style="margin-top:14px"><button class="b-main" id="btn-login" type="button" style="width:100%">Sign in</button></div>
+  <div id="login-status" class="err" style="margin-top:10px; font-size:13px;"></div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div>
+      <h1>Kaarigar Admin</h1>
+      <p class="sub" id="who">Signed in</p>
+    </div>
+    <button class="b-ghost" id="btn-logout" type="button">Sign out</button>
+  </div>
+
+  <div class="row">
+    <input type="text" id="search" placeholder="Search name or phone…" />
+    <select id="filter">
+      <option value="all">All</option>
+      <option value="unverified" selected>Unverified</option>
+      <option value="verified">Verified</option>
+    </select>
+    <button class="b-ghost" id="btn-refresh" type="button">Refresh</button>
+  </div>
+  <div class="row">
+    <button class="b-ok" id="btn-verify" type="button" disabled>Mark Verified (0)</button>
+    <button class="b-warn" id="btn-unverify" type="button" disabled>Remove Verified (0)</button>
+    <button class="b-del" id="btn-delete" type="button" disabled>Delete (0)</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:30px"><input type="checkbox" id="check-all" /></th>
+        <th>Technician</th>
+        <th>Status</th>
+        <th>Chat</th>
+      </tr>
+    </thead>
+    <tbody id="rows"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+  </table>
+  <div id="status"></div>
+  <p class="muted" style="margin-top:14px">To verify: check the WhatsApp message you received. The <b>sender's number</b> must match the phone shown here. Then tick the row and tap Mark Verified.</p>
+</div>
+
+<script type="module">
+  const firebaseConfig = {
+    apiKey: "AIzaSyCVp07idh5slisdnJ6MWXc439_mEp17cns",
+    authDomain: "kaarigar-technician.firebaseapp.com",
+    projectId: "kaarigar-technician",
+    storageBucket: "kaarigar-technician.firebasestorage.app",
+    messagingSenderId: "717561353020",
+    appId: "1:717561353020:web:0e4cc925fb7ab3d9b74439"
+  };
+
+  const $ = (id) => document.getElementById(id);
+  let db, auth, F, A;            // F = firestore module, A = auth module
+  let records = [];
+
+  function setStatus(msg, cls) { $("status").textContent = msg; $("status").className = cls || ""; }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+  function digits(s) { return String(s || "").replace(/\D/g, ""); }
+
+  function selectedIds() { return Array.from(document.querySelectorAll(".row-check:checked")).map((c) => c.dataset.id); }
+  function updateButtons() {
+    const n = selectedIds().length;
+    $("btn-verify").textContent = `Mark Verified (${n})`;
+    $("btn-unverify").textContent = `Remove Verified (${n})`;
+    $("btn-delete").textContent = `Delete (${n})`;
+    ["btn-verify", "btn-unverify", "btn-delete"].forEach((id) => { $(id).disabled = n === 0; });
+  }
+
+  function render() {
+    const q = $("search").value.trim().toLowerCase();
+    const f = $("filter").value;
+    const list = records.filter((r) => {
+      if (f === "verified" && r.verified !== true) return false;
+      if (f === "unverified" && r.verified === true) return false;
+      return !q || (r.name || "").toLowerCase().includes(q) || r.id.includes(q);
+    });
+    if (!list.length) {
+      $("rows").innerHTML = `<tr><td colspan="4" class="muted">No records here.</td></tr>`;
+    } else {
+      $("rows").innerHTML = list.map((r) => {
+        const ph = digits(r.phone || r.id);
+        const wa = ph.length === 10 ? "91" + ph : ph;
+        return `<tr>
+          <td><input type="checkbox" class="row-check" data-id="${esc(r.id)}" /></td>
+          <td><div class="nm">${esc(r.name) || "<span class='muted'>(no name)</span>"}</div>
+              <div class="ph">${esc(r.id)}</div>
+              <div class="tr">${esc((r.trades || []).join(", "))}</div></td>
+          <td><span class="badge ${r.verified === true ? "b-yes" : "b-no"}">${r.verified === true ? "Verified" : "Unverified"}</span></td>
+          <td><a class="wa" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a></td>
+        </tr>`;
+      }).join("");
+    }
+    $("check-all").checked = false;
+    document.querySelectorAll(".row-check").forEach((c) => c.addEventListener("change", updateButtons));
+    updateButtons();
+  }
+
+  async function loadRecords() {
+    setStatus("Loading…");
+    try {
+      const snap = await F.getDocs(F.collection(db, "technicians"));
+      records = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setStatus(`Loaded ${records.length} record(s).`, "ok");
+      render();
+    } catch (e) {
+      setStatus("⚠ Couldn't load: " + e.message, "err");
+    }
+  }
+
+  async function runBatch(verbLabel, fn) {
+    const ids = selectedIds();
+    if (!ids.length) return;
+    $("btn-verify").disabled = $("btn-unverify").disabled = $("btn-delete").disabled = true;
+    setStatus(`${verbLabel} ${ids.length} record(s)…`);
+    let done = 0, failed = 0, firstErr = "";
+    for (const id of ids) {
+      try { await fn(id); done++; } catch (e) { failed++; if (!firstErr) firstErr = e.message || String(e); }
+    }
+    await loadRecords();
+    if (failed) setStatus(`⚠ ${done} of ${ids.length} done. ${failed} failed — reason: ${firstErr}`, "err");
+    else setStatus(`✓ ${done} record(s) updated.`, "ok");
+  }
+
+  $("btn-verify").addEventListener("click", () => {
+    const names = selectedIds().join(", ");
+    if (!confirm(`Mark as Verified?\n\n${names}\n\nOnly do this if the WhatsApp message came from that same number.`)) return;
+    runBatch("Verifying", (id) => F.updateDoc(F.doc(db, "technicians", id), { verified: true, verifiedAt: F.serverTimestamp() }));
+  });
+  $("btn-unverify").addEventListener("click", () => {
+    if (!confirm(`Remove the Verified tick from ${selectedIds().length} record(s)?`)) return;
+    runBatch("Updating", (id) => F.updateDoc(F.doc(db, "technicians", id), { verified: false, verifiedAt: null }));
+  });
+  $("btn-delete").addEventListener("click", () => {
+    const names = selectedIds().map((id) => { const r = records.find((x) => x.id === id); return r && r.name ? `${r.name} (${id})` : id; }).join("\n");
+    if (!confirm(`Delete ${selectedIds().length} record(s)? This cannot be undone:\n\n${names}`)) return;
+    runBatch("Deleting", (id) => F.deleteDoc(F.doc(db, "technicians", id)));
+  });
+
+  $("check-all").addEventListener("change", () => {
+    document.querySelectorAll(".row-check").forEach((c) => { c.checked = $("check-all").checked; });
+    updateButtons();
+  });
+  $("search").addEventListener("input", render);
+  $("filter").addEventListener("change", render);
+  $("btn-refresh").addEventListener("click", loadRecords);
+
+  function showApp(user) {
+    $("login").style.display = "none";
+    $("app").style.display = "block";
+    $("who").textContent = "Signed in as " + user.email;
+    loadRecords();
+  }
+  function showLogin() { $("app").style.display = "none"; $("login").style.display = "block"; }
+
+  async function doLogin() {
+    $("login-status").textContent = "";
+    $("btn-login").disabled = true;
+    try {
+      await A.signInWithEmailAndPassword(auth, $("email").value.trim(), $("password").value);
+    } catch (e) {
+      const bad = ["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found", "auth/invalid-email"];
+      $("login-status").textContent = bad.includes(e.code) ? "Wrong email or password." : "⚠ " + (e.message || e);
+    }
+    $("btn-login").disabled = false;
+  }
+  $("btn-login").addEventListener("click", doLogin);
+  $("password").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+  $("btn-logout").addEventListener("click", () => A.signOut(auth));
+
+  (async () => {
+    try {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+      F = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+      A = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+      const app = initializeApp(firebaseConfig);
+      db = F.getFirestore(app);
+      auth = A.getAuth(app);
+      A.onAuthStateChanged(auth, (user) => { if (user) showApp(user); else showLogin(); });
+    } catch (e) {
+      $("login-status").textContent = "⚠ Couldn't connect to Firebase: " + e.message;
+    }
+  })();
+</script>
+</body>
+</html>
