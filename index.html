@@ -154,9 +154,6 @@
   .banner button { background:none; border:none; color:#1C2541; text-decoration:underline; font-size:11px; font-family:'JetBrains Mono',monospace; padding:0; margin-top:4px; cursor:pointer; }
 
   .back-btn { display:flex; align-items:center; gap:4px; background:none; border:none; color:#1C2541; font-size:14px; font-family:'Inter',sans-serif; padding:0; margin-bottom:16px; cursor:pointer; }
-  .sort-row { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
-  .sort-chip { padding:7px 13px; border-radius:999px; font-size:12px; font-weight:600; border:none; cursor:pointer; background:rgba(32,36,44,.06); color:#8891A0; font-family:'Inter',sans-serif; }
-  .sort-chip.active { background:#1C2541; color:#fff; }
   .empty-box { border:1px dashed rgba(32,36,44,.2); border-radius:8px; padding:24px; text-align:center; color:#8891A0; font-size:14px; }
 
   .tech-card { display:flex; background:#FBFAF6; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(28,37,65,.08); margin-bottom:12px; }
@@ -263,7 +260,7 @@
     <div class="ic"><span class="msr" style="font-size:22px">engineering</span></div>
     <div><div class="txt-title">For Kaarigar Technician</div><div class="txt-sub">Go online, get matched with nearby users</div></div>
   </button>
-  <img src="company-footer.jpg" alt="Abode Digital Technology LLP — Making Life Easier" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); width:80%; max-width:300px; border-radius:8px; opacity:0.92;" />
+  <img src="company-footer.jpg" alt="Abode Digital Technology — Making Life Easier" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); width:80%; max-width:300px; border-radius:8px; opacity:0.92;" />
 </div>
 
 <div id="tech-explainer">
@@ -323,22 +320,17 @@
         <div class="trust-item"><div class="ic"><span class="msr" style="color:#2E8B57">verified</span></div><div class="lbl">Verified<br/>technicians</div></div>
         <div class="trust-item"><div class="ic"><span class="msr" style="color:#2F6FA8">schedule</span></div><div class="lbl">Live<br/>availability</div></div>
         <div class="trust-item"><div class="ic"><span class="msr" style="color:#3FA796">payments</span></div><div class="lbl">Fair<br/>pricing</div></div>
-        <div class="trust-item"><div class="ic"><span class="msr" style="color:#F2A93B">star</span></div><div class="lbl">Rated by<br/>users</div></div>
       </div>
     </div>
 
     <div id="screen-list" style="display:none">
       <button class="back-btn" id="btn-back"><span class="msr" style="font-size:16px">arrow_back</span> All services</button>
       <h3 class="section-title" id="list-heading">0 online now</h3>
-      <div class="sort-row">
-        <button class="sort-chip active" id="sort-nearest">Nearest</button>
-        <button class="sort-chip" id="sort-rated">Top rated</button>
-      </div>
       <div id="list-content"></div>
     </div>
   </main>
   <div style="text-align:center; padding:8px 16px 24px; color:#8891A0; font-size:10.5px; font-family:'JetBrains Mono',monospace;">
-    © 2022 Abode Digital Technology LLP - All rights reserved.
+    © 2026 Abode Digital Technology - All rights reserved.
   </div>
 </div>
 </div>
@@ -460,7 +452,7 @@
   <footer>
     <a href="#" id="config-note">⚠ Firebase not configured yet — see setup notes in this file</a>
     <div style="margin-top:8px; color:#8891A0; font-size:10.5px; font-family:'JetBrains Mono',monospace;">
-      © 2022 Abode Digital Technology LLP - All rights reserved.
+      © 2026 Abode Digital Technology - All rights reserved.
     </div>
   </footer>
 </div>
@@ -538,8 +530,6 @@ function initUserApp() {
   const listHeading = document.getElementById("list-heading");
   const listContent = document.getElementById("list-content");
   const geoBanner = document.getElementById("geo-banner");
-  const sortNearestBtn = document.getElementById("sort-nearest");
-  const sortRatedBtn = document.getElementById("sort-rated");
   const tradeGrid = document.getElementById("trade-grid");
   const locationText = document.getElementById("location-text");
   const heroCount = document.getElementById("hero-count");
@@ -547,7 +537,6 @@ function initUserApp() {
   let userCoords = null;
   let geoStatus = "idle";
   let currentTrade = null;
-  let sortMode = "nearest";
   let allDocs = [];
   const VERIFIED_TICK_SVG_USER = '<svg class="verified-tick" viewBox="0 0 24 24" aria-label="Verified"><path fill="#2E8B57" d="M12 1.5l2.6 2 3.3-.2 1.2 3.1 2.8 1.8-.9 3.2.9 3.2-2.8 1.8-1.2 3.1-3.3-.2-2.6 2-2.6-2-3.3.2-1.2-3.1-2.8-1.8.9-3.2-.9-3.2 2.8-1.8 1.2-3.1 3.3.2z"/><path fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M7.8 12.4l3 3 5.6-6"/></svg>';
   let db = null;
@@ -563,12 +552,6 @@ function initUserApp() {
   document.getElementById("btn-emergency").addEventListener("click", () => openTrade("__all__"));
   document.getElementById("btn-back").addEventListener("click", closeTrade);
   document.getElementById("btn-locate").addEventListener("click", locate);
-  sortNearestBtn.addEventListener("click", () => { sortMode = "nearest"; updateSortUI(); renderList(); });
-  sortRatedBtn.addEventListener("click", () => { sortMode = "rated"; updateSortUI(); renderList(); });
-  function updateSortUI() {
-    sortNearestBtn.classList.toggle("active", sortMode === "nearest");
-    sortRatedBtn.classList.toggle("active", sortMode === "rated");
-  }
 
   function showBanner() {
     const msgs = {
@@ -680,9 +663,8 @@ function initUserApp() {
     const isCapped = !isAll && byNearest.length > MAX_SHOWN;
     const selected = isCapped ? byNearest.slice(0, MAX_SHOWN) : byNearest;
 
-    // Display sort mode still applies to whichever set is actually shown —
-    // "Nearest" keeps nearest-first order, "Top rated" re-sorts that same set by rating.
-    let sorted = [...selected].sort((a,b) => sortMode === "nearest" ? a.distance - b.distance : (b.rating||0) - (a.rating||0));
+    // Always nearest first.
+    let sorted = [...selected].sort((a,b) => a.distance - b.distance);
 
     listHeading.textContent = isAll ? `${sorted.length} technicians within ${usedRange} km` : `${sorted.length} ${trade.label.toLowerCase()} within ${usedRange} km`;
     if (usedRange !== DEFAULT_RANGE_KM) {
@@ -734,7 +716,6 @@ function initUserApp() {
           <div class="meta-row">
             <span>📍 ${t.distance.toFixed(2)} km</span>
             <span>⏱ ~${etaMin(t.distance)} min</span>
-            <span>★ ${(t.rating || 4.7).toFixed(1)}</span>
           </div>
           <a class="call-btn" href="tel:${t.phone || ""}" data-techid="${t._id || ""}">📞 Call ${(t.name || "technician").split(" ")[0]}</a>
         </div>
@@ -1222,7 +1203,6 @@ function initTechApp() {
       trades: Array.from(selectedTrades),
       lat, lng,
       online: true,
-      rating: 4.7,
       updatedAt: fsServerTimestamp()
     };
     if (techIsNew) {

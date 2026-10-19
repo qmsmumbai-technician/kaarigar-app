@@ -1,4 +1,4 @@
-const CACHE = "kaarigar-merged-v37";
+const CACHE = "kaarigar-merged-v38";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./splash.jpg", "./company-footer.jpg", "./tech-explainer-voice.mp3", "./trade.photos/ac_technician.jpg", "./trade.photos/carpentry.jpg", "./trade.photos/computer_repair.jpg", "./trade.photos/electrical.jpg", "./trade.photos/fabrication.jpg", "./trade.photos/home_cleaning.jpg", "./trade.photos/kabadi_wala.jpg", "./trade.photos/kadiya_mason.jpg", "./trade.photos/key_maker.jpg", "./trade.photos/marriage_photography.jpg", "./trade.photos/painter.jpg", "./trade.photos/pest_control.jpg", "./trade.photos/plumbing.jpg", "./trade.photos/pooja_pandit.jpg", "./trade.photos/refrigerator.jpg", "./trade.photos/ro_water.jpg", "./trade.photos/tv_repair.jpg", "./trade.photos/washing_machine.jpg", "./trade.photos/water_supplier.jpg", "./trade.photos/vastu_consultant.jpg", "./trade.photos/interior_decorator.jpg", "./trade.photos/upholstery_repair.jpg", "./trade.photos/window_sliding.jpg"];
 
 self.addEventListener("install", (e) => {
