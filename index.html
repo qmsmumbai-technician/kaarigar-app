@@ -190,6 +190,20 @@
   .meta-row { display:flex; gap:12px; margin-top:8px; color:#8891A0; font-family:'JetBrains Mono',monospace; font-size:13px; flex-wrap:wrap; }
   .meta-row span { color:#20242C; display:flex; align-items:center; gap:4px; }
   .call-btn { margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px; background:#F2A93B; color:#1C2541; font-weight:700; font-size:14px; padding:11px; border-radius:8px; text-decoration:none; font-family:'Inter',sans-serif; }
+
+  .loc-btn { margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px; background:transparent; color:#1C2541; border:1.5px solid #1C2541; font-weight:600; font-size:13px; padding:9px; border-radius:8px; font-family:'Inter',sans-serif; width:100%; cursor:pointer; }
+  .loc-sheet-bg { position:fixed; inset:0; background:rgba(10,14,25,.55); z-index:1000; display:none; align-items:flex-end; justify-content:center; }
+  .loc-sheet-bg.open { display:flex; }
+  .loc-sheet { background:#fff; width:100%; max-width:480px; border-radius:18px 18px 0 0; padding:18px 16px 22px; font-family:'Inter',sans-serif; color:#20242C; max-height:92vh; overflow:auto; }
+  .loc-sheet h3 { margin:0 0 4px; font-size:17px; color:#1C2541; }
+  .loc-sheet .sub { margin:0 0 12px; font-size:12.5px; color:#6B7280; }
+  .loc-sheet label { display:block; font-size:12px; font-weight:600; margin:10px 0 4px; color:#1C2541; }
+  .loc-sheet input { width:100%; box-sizing:border-box; padding:11px; font-size:15px; border:1.5px solid #D5D8DE; border-radius:8px; font-family:'Inter',sans-serif; }
+  .loc-sheet .row2 { display:flex; gap:10px; } .loc-sheet .row2 > div { flex:1; }
+  .loc-note { margin-top:10px; font-size:12px; color:#2F7D4F; display:flex; gap:6px; align-items:center; }
+  .loc-note.warn { color:#B45309; }
+  .loc-send { margin-top:14px; width:100%; background:#25D366; color:#fff; border:0; font-weight:700; font-size:15px; padding:13px; border-radius:10px; font-family:'Inter',sans-serif; cursor:pointer; }
+  .loc-cancel { margin-top:8px; width:100%; background:none; border:0; color:#6B7280; font-size:13px; padding:8px; font-family:'Inter',sans-serif; cursor:pointer; }
   .searching { display:flex; flex-direction:column; align-items:center; padding:60px 0; color:#8891A0; font-family:'JetBrains Mono',monospace; font-size:13px; }
   .spinner { width:40px; height:40px; border-radius:50%; border:3px solid rgba(242,169,59,.3); border-top-color:#F2A93B; animation:spin .8s linear infinite; margin-bottom:14px; }
   @keyframes spin { to { transform:rotate(360deg); } }
@@ -718,10 +732,14 @@ function initUserApp() {
             <span>⏱ ~${etaMin(t.distance)} min</span>
           </div>
           <a class="call-btn" href="tel:${t.phone || ""}" data-techid="${t._id || ""}">📞 Call ${(t.name || "technician").split(" ")[0]}</a>
+          <button type="button" class="loc-btn" data-phone="${t.phone || ""}" data-name="${(t.name || "technician").split(" ")[0].replace(/"/g,"")}">📍 Send my address &amp; location</button>
         </div>
       </div>`;
     }).join("");
 
+    document.querySelectorAll(".loc-btn").forEach((el) => {
+      el.addEventListener("click", () => openLocSheet(el.dataset.phone, el.dataset.name));
+    });
     document.querySelectorAll(".call-btn").forEach((el) => {
       el.addEventListener("click", () => {
         const techId = el.dataset.techid;
@@ -731,6 +749,63 @@ function initUserApp() {
       });
     });
   }
+
+
+  // ---- Send my address & location (customer -> technician, via WhatsApp) ----
+  const ADDR_KEY = "kaarigar_cust_addr";
+  const locBg = document.createElement("div");
+  locBg.className = "loc-sheet-bg";
+  locBg.innerHTML = `<div class="loc-sheet" role="dialog" aria-modal="true">
+    <h3>Send address to <span id="locTechName">technician</span></h3>
+    <p class="sub">So he can reach your door easily. Sent through WhatsApp, only when you press Send.</p>
+    <label for="locBuilding">Building / society name</label>
+    <input id="locBuilding" type="text" autocomplete="off" placeholder="e.g. Sai Heights" />
+    <div class="row2">
+      <div><label for="locFloor">Floor</label><input id="locFloor" type="text" autocomplete="off" placeholder="e.g. 4" /></div>
+      <div><label for="locFlat">Flat / room no.</label><input id="locFlat" type="text" autocomplete="off" placeholder="e.g. 402" /></div>
+    </div>
+    <label for="locLandmark">Landmark (optional)</label>
+    <input id="locLandmark" type="text" autocomplete="off" placeholder="e.g. near the bus stop" />
+    <div class="loc-note" id="locNote"></div>
+    <button type="button" class="loc-send" id="locSend">Send on WhatsApp</button>
+    <button type="button" class="loc-cancel" id="locCancel">Cancel</button>
+  </div>`;
+  document.body.appendChild(locBg);
+  let locPhone = "";
+  function locField(id) { return document.getElementById(id); }
+  function openLocSheet(phone, name) {
+    locPhone = String(phone || "").replace(/\D/g, "").slice(-10);
+    locField("locTechName").textContent = name || "technician";
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(ADDR_KEY) || "{}"); } catch {}
+    locField("locBuilding").value = saved.building || "";
+    locField("locFloor").value = saved.floor || "";
+    locField("locFlat").value = saved.flat || "";
+    locField("locLandmark").value = saved.landmark || "";
+    const note = locField("locNote");
+    if (userCoords) { note.className = "loc-note"; note.textContent = "✓ Your map location will be attached automatically."; }
+    else { note.className = "loc-note warn"; note.textContent = "Map location is not available. Your typed address will be sent."; }
+    locBg.classList.add("open");
+  }
+  function closeLocSheet() { locBg.classList.remove("open"); }
+  locField("locCancel").addEventListener("click", closeLocSheet);
+  locBg.addEventListener("click", (e) => { if (e.target === locBg) closeLocSheet(); });
+  locField("locSend").addEventListener("click", () => {
+    const building = locField("locBuilding").value.trim();
+    const floor = locField("locFloor").value.trim();
+    const flat = locField("locFlat").value.trim();
+    const landmark = locField("locLandmark").value.trim();
+    if (!building) { locField("locBuilding").focus(); locField("locBuilding").style.borderColor = "#DC2626"; return; }
+    locField("locBuilding").style.borderColor = "";
+    try { localStorage.setItem(ADDR_KEY, JSON.stringify({ building, floor, flat, landmark })); } catch {}
+    let msg = "Hello, I found you on Kaarigar.\nBuilding: " + building;
+    if (floor) msg += ", Floor: " + floor;
+    if (flat) msg += ", Flat: " + flat;
+    if (landmark) msg += "\nLandmark: " + landmark;
+    if (userCoords) msg += "\nLocation: https://maps.google.com/?q=" + userCoords.lat.toFixed(6) + "," + userCoords.lng.toFixed(6);
+    closeLocSheet();
+    window.open("https://wa.me/91" + locPhone + "?text=" + encodeURIComponent(msg), "_blank");
+  });
 
   (async () => {
     try {
