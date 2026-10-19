@@ -798,7 +798,7 @@ function initUserApp() {
     if (!building) { locField("locBuilding").focus(); locField("locBuilding").style.borderColor = "#DC2626"; return; }
     locField("locBuilding").style.borderColor = "";
     try { localStorage.setItem(ADDR_KEY, JSON.stringify({ building, floor, flat, landmark })); } catch {}
-    let msg = "Hello, I found you on Kaarigar.\nBuilding: " + building;
+    let msg = "नमस्ते, मुझे आपका नंबर Kaarigar ऐप पर मिला। मेरा पता नीचे है:\nBuilding: " + building;
     if (floor) msg += ", Floor: " + floor;
     if (flat) msg += ", Flat: " + flat;
     if (landmark) msg += "\nLandmark: " + landmark;
