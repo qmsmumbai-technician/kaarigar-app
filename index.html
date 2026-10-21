@@ -597,19 +597,26 @@ function initUserApp() {
   function locate() {
     if (!("geolocation" in navigator)) { geoStatus = "unsupported"; showBanner(); locationText.textContent = "Using approximate location"; return; }
     geoStatus = "locating"; showBanner(); locationText.textContent = "Locating…";
+    const onOk = (pos) => {
+      userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      geoStatus = "active"; showBanner();
+      reverseGeocode(userCoords);
+      renderList(); renderHero();
+    };
+    const onFail = (err) => {
+      geoStatus = err.code === 1 ? "denied" : "error"; showBanner();
+      locationText.textContent = "Using approximate location";
+      renderList(); renderHero();
+    };
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        geoStatus = "active"; showBanner();
-        reverseGeocode(userCoords);
-        renderList(); renderHero();
-      },
+      onOk,
       (err) => {
-        geoStatus = err.code === 1 ? "denied" : "error"; showBanner();
-        locationText.textContent = "Using approximate location";
-        renderList(); renderHero();
+        // GPS-only attempt failed (timeout / no satellites indoors): retry with network location
+        if (err.code === 1) { onFail(err); return; }
+        navigator.geolocation.getCurrentPosition(onOk, onFail,
+          { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 });
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 15000 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 15000 }
     );
   }
   locate();
@@ -1307,13 +1314,24 @@ function initTechApp() {
   function goOnline() {
     if (!("geolocation" in navigator)) { showStatus("err", "This browser doesn't support GPS."); return; }
     showStatus("warn", "Requesting location permission…");
+    const onPos = (pos) => {
+      const now = Date.now();
+      if (now - lastWriteAt >= WRITE_INTERVAL_MS || lastWriteAt === 0) writeLocation(pos.coords.latitude, pos.coords.longitude);
+    };
+    const showErr = (err) => showStatus("err", "⚠ Location error: " + err.message + ". Make sure location is enabled and permission granted.");
     watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        const now = Date.now();
-        if (now - lastWriteAt >= WRITE_INTERVAL_MS || lastWriteAt === 0) writeLocation(pos.coords.latitude, pos.coords.longitude);
+      onPos,
+      (err) => {
+        // GPS-only failed (timeout / unavailable): switch to network-based location
+        if (err.code !== 1 && watchId != null) {
+          navigator.geolocation.clearWatch(watchId);
+          watchId = navigator.geolocation.watchPosition(onPos, showErr,
+            { enableHighAccuracy: false, maximumAge: 30000, timeout: 20000 });
+          return;
+        }
+        showErr(err);
       },
-      (err) => showStatus("err", "⚠ Location error: " + err.message + ". Make sure location is enabled and permission granted."),
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 }
     );
   }
 
