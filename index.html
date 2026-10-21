@@ -578,7 +578,7 @@ function initUserApp() {
     geoBanner.classList.add("show");
     geoBanner.innerHTML = `<div>⚠️</div><div>${msgs[geoStatus] || "Locating…"}${
       (geoStatus === "denied" || geoStatus === "error") ? '<br/><button id="retry-geo">RETRY LOCATION</button>' : ""
-    }</div>`;
+    }${(window.__geoDetail && (geoStatus === "denied" || geoStatus === "error")) ? '<br/><small style="opacity:.7">' + window.__geoDetail + '</small>' : ""}</div>`;
     const retryBtn = document.getElementById("retry-geo");
     if (retryBtn) retryBtn.addEventListener("click", locate);
   }
@@ -603,7 +603,10 @@ function initUserApp() {
       reverseGeocode(userCoords);
       renderList(); renderHero();
     };
-    const onFail = (err) => {
+    const onFail = async (err) => {
+      let perm = "?";
+      try { perm = (await navigator.permissions.query({ name: "geolocation" })).state; } catch {}
+      window.__geoDetail = "v41 · code " + err.code + " · perm " + perm + " · " + (err.message || "").slice(0, 80);
       geoStatus = err.code === 1 ? "denied" : "error"; showBanner();
       locationText.textContent = "Using approximate location";
       renderList(); renderHero();
