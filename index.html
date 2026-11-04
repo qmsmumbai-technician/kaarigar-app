@@ -687,6 +687,25 @@ function initUserApp() {
     heroCount.textContent = `${count} technician${count === 1 ? "" : "s"} reachable within 2 km`;
   }
 
+  // Remembers on THIS phone which technicians the customer already called today,
+  // so repeat taps by the same customer on the same technician count only once a day.
+  // Stores only { technicianId: "YYYY-MM-DD" } - no customer details. If storage is
+  // unavailable the call is simply counted (never blocks the call itself).
+  function shouldCountCallToday(techId) {
+    const KEY = "kaarigar_called";
+    const d = new Date();
+    const today = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    try {
+      let map = {};
+      try { map = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch { map = {}; }
+      if (map[techId] === today) return false;
+      Object.keys(map).forEach((k) => { if (map[k] !== today) delete map[k]; });
+      map[techId] = today;
+      localStorage.setItem(KEY, JSON.stringify(map));
+      return true;
+    } catch { return true; }
+  }
+
   function renderList() {
     if (!currentTrade) return;
     if (!db) { listContent.innerHTML = `<div class="searching"><div class="spinner"></div>CONNECTING…</div>`; return; }
@@ -777,7 +796,8 @@ function initUserApp() {
     document.querySelectorAll(".call-btn").forEach((el) => {
       el.addEventListener("click", () => {
         const techId = el.dataset.techid;
-        if (techId && db && fsUpdateDoc && fsDocRef && fsIncrement) {
+        // Count at most one enquiry per customer phone per technician per day.
+        if (techId && shouldCountCallToday(techId) && db && fsUpdateDoc && fsDocRef && fsIncrement) {
           fsUpdateDoc(fsDocRef(db, "technicians", techId), { leadCount: fsIncrement(1) }).catch(() => {});
         }
       });
