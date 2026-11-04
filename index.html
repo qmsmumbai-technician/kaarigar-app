@@ -170,6 +170,8 @@
   .live-label { font-size:10px; color:#2E8B57; font-weight:600; letter-spacing:.05em; }
   .recent-dot { width:6px; height:6px; border-radius:50%; background:#C77D1E; }
   .recent-label { font-size:10px; color:#8B5E1E; font-weight:600; letter-spacing:.05em; }
+  .old-dot { background:#9AA0AB; }
+  .old-label { color:#6B7280; }
   .call-note { font-size:11px; font-weight:600; color:#2F6FA8; margin-top:3px; }
   .trade-tag { font-size:9px; color:#8891A0; font-family:'JetBrains Mono',monospace; margin-top:1px; }
   .verified-tick { display:inline-block; width:16px; height:16px; vertical-align:-3px; margin-left:5px; }
@@ -458,7 +460,7 @@
       <h2 style="font-size:19px; margin:0 0 6px">Your free trial has ended</h2>
       <!-- WEB version (browser): price + UPI payment -->
       <div id="paywall-web">
-      <p class="sub" style="margin-bottom:14px">You've received 10+ leads and your 30-day free trial is over. Continue getting matched with nearby users for just:</p>
+      <p class="sub" style="margin-bottom:14px">You've received 10 enquiries and your free trial is over. Continue getting matched with nearby users for just:</p>
       <p style="font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:26px; color:#1C2541; margin:0 0 14px">
         ₹<span id="paywall-price"></span> <span style="font-size:14px; color:#8891A0; font-weight:600">/ <span id="paywall-months"></span> months</span>
       </p>
@@ -468,7 +470,7 @@
       </div>
       <!-- PLAY APP version: no price, no payment, support contact only -->
       <div id="paywall-play" style="display:none">
-      <p class="sub" style="margin-bottom:14px">You've received 10+ leads and your 30-day free trial is over. To keep receiving leads, please contact Abode Digital Technology support.</p>
+      <p class="sub" style="margin-bottom:14px">You've received 10 enquiries and your free trial is over. To keep receiving leads, please contact Abode Digital Technology support.</p>
       <button id="btn-support" class="primary-btn" style="width:100%; padding:15px; border:none; border-radius:10px; font-size:15px; font-weight:700; color:#fff; background:#25a244; cursor:pointer; font-family:'Inter',sans-serif; margin-bottom:10px;">Contact support on WhatsApp</button>
       <button id="btn-play-ok" class="link-btn" style="display:block; width:100%; text-align:center; background:none; border:none; color:#8891A0; font-size:13px; text-decoration:underline; cursor:pointer; font-family:'Inter',sans-serif;">OK</button>
       <p class="hint" style="margin-top:10px">Support will help you continue. We'll get you back online soon.</p>
@@ -549,7 +551,12 @@ function initUserApp() {
     if (mins < 1) return "just now";
     if (mins < 60) return `${mins} min ago`;
     const hrs = Math.floor(mins / 60);
-    return `${hrs} hr${hrs === 1 ? "" : "s"} ago`;
+    if (hrs < 24) return `${hrs} hr${hrs === 1 ? "" : "s"} ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 14) return `${days} day${days === 1 ? "" : "s"} ago`;
+    if (days < 60) { const w = Math.floor(days / 7); return `${w} week${w === 1 ? "" : "s"} ago`; }
+    const mo = Math.floor(days / 30);
+    return `${mo} month${mo === 1 ? "" : "s"} ago`;
   }
 
   const screenServices = document.getElementById("screen-services");
@@ -661,13 +668,15 @@ function initUserApp() {
       if (typeof data.lat !== "number" || typeof data.lng !== "number") return;
       const updatedAt = data.updatedAt && data.updatedAt.toMillis ? data.updatedAt.toMillis() : (data.updatedAt || 0);
       const ageMs = now - updatedAt;
-      if (ageMs > VISIBILITY_WINDOW_MS) return;
+      if (data.hidden === true) return; // hidden by admin
       const distance = haversineKm(coords, { lat: data.lat, lng: data.lng });
       if (distance > maxRange) return;
       // Three status tiers: LIVE (online, recent) / RECENT (online, stale ping) / OFFLINE (explicitly went offline)
       const isOnlineFlag = data.online === true;
       const isLive = isOnlineFlag && ageMs <= LIVE_THRESHOLD_MS;
-      results.push({ ...data, distance, ageMs, isLive, isOnlineFlag });
+      // Order: 0 = live now, 1 = active within the last 8 hours, 2 = everyone else ("last seen ...")
+      const tier = isLive ? 0 : (ageMs <= VISIBILITY_WINDOW_MS ? 1 : 2);
+      results.push({ ...data, distance, ageMs, isLive, isOnlineFlag, tier });
     });
     return results;
   }
@@ -695,20 +704,20 @@ function initUserApp() {
     // (not the all-trades "Need Help Now" view), cap the pool to the nearest
     // 3 — online or recently-offline both count toward this. The "Need Help
     // Now" view is intentionally left uncapped, unchanged.
-    const byNearest = [...pool].sort((a, b) => a.distance - b.distance);
-    const MAX_SHOWN = 3;
+    const byNearest = [...pool].sort((a, b) => (a.tier - b.tier) || (a.distance - b.distance));
+    const MAX_SHOWN = 5;
     const isCapped = !isAll && byNearest.length > MAX_SHOWN;
     const selected = isCapped ? byNearest.slice(0, MAX_SHOWN) : byNearest;
 
-    // Always nearest first.
-    let sorted = [...selected].sort((a,b) => a.distance - b.distance);
+    // Live first, then active today, then last-seen; nearest first inside each group.
+    let sorted = [...selected].sort((a,b) => (a.tier - b.tier) || (a.distance - b.distance));
 
     listHeading.textContent = isAll ? `${sorted.length} technicians within ${usedRange} km` : `${sorted.length} ${trade.label.toLowerCase()} within ${usedRange} km`;
     if (usedRange !== DEFAULT_RANGE_KM) {
       listHeading.innerHTML += `<div style="font-size:11px; color:#C77D1E; font-weight:600; font-family:'JetBrains Mono',monospace; margin-top:4px;">None within 2 km — showing up to 3.5 km instead</div>`;
     }
     if (isCapped) {
-      listHeading.innerHTML += `<div style="font-size:11px; color:#8891A0; font-weight:600; font-family:'JetBrains Mono',monospace; margin-top:4px;">Showing nearest 3 of ${byNearest.length}</div>`;
+      listHeading.innerHTML += `<div style="font-size:11px; color:#8891A0; font-weight:600; font-family:'JetBrains Mono',monospace; margin-top:4px;">Showing the best ${MAX_SHOWN} of ${byNearest.length}</div>`;
     }
 
     if (sorted.length === 0) {
@@ -740,9 +749,11 @@ function initUserApp() {
               <div class="live-row">${
                 t.isLive
                   ? '<span class="live-dot"></span><span class="live-label">LIVE · ONLINE</span>'
-                  : t.isOnlineFlag
-                    ? `<span class="recent-dot"></span><span class="recent-label">Online today · last seen ${timeAgo(t.ageMs)}</span>`
-                    : `<span class="recent-dot"></span><span class="recent-label">Was online · ${timeAgo(t.ageMs)} · Now offline</span>`
+                  : t.tier === 1
+                    ? (t.isOnlineFlag
+                        ? `<span class="recent-dot"></span><span class="recent-label">Online today · last seen ${timeAgo(t.ageMs)}</span>`
+                        : `<span class="recent-dot"></span><span class="recent-label">Was online · ${timeAgo(t.ageMs)} · Now offline</span>`)
+                    : `<span class="recent-dot old-dot"></span><span class="recent-label old-label">Last seen ${timeAgo(t.ageMs)}</span>`
               }</div>${t.isLive ? "" : '<div class="call-note">You can call, he may reply</div>'}
             </div>
           </div>
@@ -868,8 +879,10 @@ function initTechApp() {
 
   // ------------------------------------------------------------------
   // Free trial rules
-  // Trial ends only once BOTH are true: 30 days have passed AND the
-  // technician has received 10+ leads (Call button taps from users).
+  // Trial ends when the technician has received 10 enquiries (Call button
+  // taps from customers). He stays visible to customers after that; the
+  // admin panel lists him as "Needs follow-up" at 12 (10 + 2 extra) so the
+  // owner can contact him, mark him paid, or hide him.
   // ------------------------------------------------------------------
   const TRIAL_DAYS = 30;
   const TRIAL_LEAD_THRESHOLD = 10;
@@ -1249,13 +1262,13 @@ function initTechApp() {
         return { blocked: false };
       }
 
-      const trialExpired = daysSinceStart >= TRIAL_DAYS && leadCount >= TRIAL_LEAD_THRESHOLD;
+      const trialExpired = leadCount >= TRIAL_LEAD_THRESHOLD;
       if (trialExpired) {
         return { blocked: true, leadCount, daysSinceStart };
       }
 
       trialStatusEl.style.color = "#8891A0";
-      trialStatusEl.textContent = `Free trial — ${leadCount}/${TRIAL_LEAD_THRESHOLD} leads · day ${Math.min(daysSinceStart, TRIAL_DAYS)}/${TRIAL_DAYS}`;
+      trialStatusEl.textContent = `Free trial — ${leadCount}/${TRIAL_LEAD_THRESHOLD} enquiries`;
       return { blocked: false };
     } catch (e) {
       return { blocked: false };
