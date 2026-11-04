@@ -534,6 +534,7 @@ function initUserApp() {
   const STALE_MS = VISIBILITY_WINDOW_MS; // kept for compatibility with existing filter code below
   const DEFAULT_RANGE_KM = 2;
   const EXPANDED_RANGE_KM = 3.5;
+  const AREA_ONLY_RANGE_KM = 8;
   const AVG_SPEED_KMH = 18;
   const DEFAULT_COORDS = { lat: 19.076, lng: 72.8777 };
 
@@ -669,14 +670,16 @@ function initUserApp() {
       const updatedAt = data.updatedAt && data.updatedAt.toMillis ? data.updatedAt.toMillis() : (data.updatedAt || 0);
       const ageMs = now - updatedAt;
       if (data.hidden === true) return; // hidden by admin
+      // Technicians added by the admin have only an approximate area position (no GPS yet), so search a wider radius for them.
+      const areaOnly = data.imported === true && !updatedAt;
       const distance = haversineKm(coords, { lat: data.lat, lng: data.lng });
-      if (distance > maxRange) return;
+      if (distance > (areaOnly ? Math.max(maxRange, AREA_ONLY_RANGE_KM) : maxRange)) return;
       // Three status tiers: LIVE (online, recent) / RECENT (online, stale ping) / OFFLINE (explicitly went offline)
       const isOnlineFlag = data.online === true;
       const isLive = isOnlineFlag && ageMs <= LIVE_THRESHOLD_MS;
       // Order: 0 = live now, 1 = active within the last 8 hours, 2 = everyone else ("last seen ...")
-      const tier = isLive ? 0 : (ageMs <= VISIBILITY_WINDOW_MS ? 1 : 2);
-      results.push({ ...data, distance, ageMs, isLive, isOnlineFlag, tier });
+      const tier = isLive ? 0 : ((!areaOnly && ageMs <= VISIBILITY_WINDOW_MS) ? 1 : 2);
+      results.push({ ...data, distance, ageMs, isLive, isOnlineFlag, tier, areaOnly });
     });
     return results;
   }
@@ -772,7 +775,9 @@ function initUserApp() {
                     ? (t.isOnlineFlag
                         ? `<span class="recent-dot"></span><span class="recent-label">Online today · last seen ${timeAgo(t.ageMs)}</span>`
                         : `<span class="recent-dot"></span><span class="recent-label">Was online · ${timeAgo(t.ageMs)} · Now offline</span>`)
-                    : `<span class="recent-dot old-dot"></span><span class="recent-label old-label">Last seen ${timeAgo(t.ageMs)}</span>`
+                    : t.areaOnly
+                      ? '<span class="recent-dot old-dot"></span><span class="recent-label old-label">Not online yet</span>'
+                      : `<span class="recent-dot old-dot"></span><span class="recent-label old-label">Last seen ${timeAgo(t.ageMs)}</span>`
               }</div>${t.isLive ? "" : '<div class="call-note">You can call, he may reply</div>'}
             </div>
           </div>
@@ -781,8 +786,8 @@ function initUserApp() {
             return `<span class="trade-pill" style="color:${meta.color}">${meta.label}</span>`;
           }).join("")}</div>` : ""}
           <div class="meta-row">
-            <span>📍 ${t.distance.toFixed(2)} km</span>
-            <span>⏱ ~${etaMin(t.distance)} min</span>
+            ${t.areaOnly ? `<span>📍 ~${t.distance.toFixed(1)} km</span>` : `<span>📍 ${t.distance.toFixed(2)} km</span>
+            <span>⏱ ~${etaMin(t.distance)} min</span>`}
           </div>
           <a class="call-btn" href="tel:${t.phone || ""}" data-techid="${t._id || ""}">📞 Call ${(t.name || "technician").split(" ")[0]}</a>
           <button type="button" class="loc-btn" data-phone="${t.phone || ""}" data-name="${(t.name || "technician").split(" ")[0].replace(/"/g,"")}">📍 Send my address &amp; location</button>
