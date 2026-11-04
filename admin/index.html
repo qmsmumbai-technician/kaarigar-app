@@ -43,6 +43,10 @@
   .chipf { display:inline-block; font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px; }
   .c-red { background:#F9DEDA; color:#9C2A12; } .c-amb { background:#F7E6C8; color:#8A5A00; } .c-grn { background:#DDF0E3; color:#1F6B42; } .c-gry { background:#E5E7EB; color:#4B5563; }
   .ld { font-size:12px; color:#1C2541; margin-top:3px; font-weight:600; }
+  .imp { margin:0 0 12px; } .imp summary { cursor:pointer; font-weight:700; font-size:14px; padding:12px 14px; background:#fff; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+  .imp .box { background:#fff; border-radius:0 0 10px 10px; padding:12px 14px 14px; margin-top:-4px; }
+  textarea { width:100%; min-height:110px; padding:10px 12px; border:1px solid #D8D4C8; border-radius:8px; font-size:13px; font-family:Consolas,monospace; }
+  .pv td { font-size:12.5px; padding:7px 6px; } .pv .bad { color:#C7401E; font-weight:600; } .pv .good { color:#1F6B42; font-weight:600; } .pv .skip { color:#8A5A00; font-weight:600; }
   #summary { font-size:13px; font-weight:600; margin:0 0 10px; color:#1C2541; }
 </style>
 </head>
@@ -76,6 +80,7 @@
       <option value="trialrunning">Trial running</option>
       <option value="paid">Paid</option>
       <option value="hidden">Hidden</option>
+      <option value="notjoined">Added by me · not joined yet</option>
       <option value="all">All</option>
       <option value="verified">Verified</option>
       <option value="unverified">Unverified</option>
@@ -92,6 +97,18 @@
     <button class="b-ghost" id="btn-show" type="button" disabled>Show again (0)</button>
     <button class="b-del" id="btn-delete" type="button" disabled>Delete (0)</button>
   </div>
+  <details class="imp" id="imp">
+    <summary>Import technicians (added by you)</summary>
+    <div class="box">
+      <p class="muted" style="margin:0 0 6px">One per line: <b>Name, Trade, Number, Area</b> (comma or tab). Nothing is saved until you tap Add.</p>
+      <textarea id="imp-text" placeholder="Bablu, Carpenter, 7387871040, Nallasopara - Vasai link Rd"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="b-main" id="imp-check" type="button">Check list</button>
+        <button class="b-ok" id="imp-add" type="button" disabled>Add 0 technicians</button>
+      </div>
+      <div id="imp-result"></div>
+    </div>
+  </details>
   <div id="summary"></div>
 
   <table>
@@ -140,10 +157,135 @@
     if (leads >= TRIAL_LEADS) return { key: "trialover", label: "Trial over", cls: "c-amb", extra: (TRIAL_LEADS + GRACE_LEADS - leads) + " of " + GRACE_LEADS + " extra enquiries left", leads };
     return { key: "trialrunning", label: "Trial running", cls: "c-gry", extra: leads + " of " + TRIAL_LEADS + " enquiries", leads };
   }
+  function notJoined(r) { return r.imported === true && !ms(r.updatedAt); }
   function leadsText(r) {
     const n = r.leadCount || 0;
     return n > TRIAL_LEADS ? `Enquiries: ${n} (${TRIAL_LEADS} + ${n - TRIAL_LEADS} extra)` : `Enquiries: ${n}`;
   }
+
+  const PLAY_LINK = "https://play.google.com/store/apps/details?id=com.abodedigital.kaarigar";
+  function waMessage(r) {
+    const n = (r.name || "").trim().split(" ")[0];
+    const hi = n ? `नमस्कार ${n} जी 🙏` : "नमस्कार 🙏";
+    if ((r.leadCount || 0) > 0) {
+      return `${hi}\nMy Kaarigar ऐप से एक ग्राहक ने आपको कॉल किया है। ऐप इंस्टॉल करके Go Online करें, ताकि और ग्राहक आपको आसानी से ढूंढ सकें (पहले 10 ग्राहक-कॉल फ्री):\n${PLAY_LINK}\nनाम हटवाना हो तो STOP लिख दीजिए।\n– Abode Digital Technology`;
+    }
+    return `${hi}\nआपका नंबर *My Kaarigar – Home Services* ऐप में कारीगर के रूप में जोड़ा गया है (फ्री)। आस-पास के ग्राहक आपको सीधे कॉल कर सकते हैं। ऐप इंस्टॉल करके Go Online करें:\n${PLAY_LINK}\nनाम हटवाना हो तो STOP लिख दीजिए।\n– Abode Digital Technology`;
+  }
+
+  // Trades: app id, label, and words people may write
+  const TRADE_WORDS = {
+    plumbing: ["plumber", "plumbing", "प्लंबर", "नल"],
+    electrical: ["electrician", "electrical", "इलेक्ट्रीशियन", "बिजली"],
+    carpentry: ["carpenter", "carpentry", "कारपेंटर", "सुतार", "बढ़ई"],
+    ac_technician: ["ac technician", "ac repair", "ac service", "ac", "air conditioner"],
+    ro_water: ["ro", "water purifier", "ro water", "ro / water purifier"],
+    washing_machine: ["washing machine", "washing"],
+    refrigerator: ["refrigerator", "fridge"],
+    tv_repair: ["tv repairing", "tv repair", "tv"],
+    home_cleaning: ["home cleaning", "cleaning"],
+    pest_control: ["pest control", "pest"],
+    window_sliding: ["window sliding", "sliding", "window"],
+    fabrication: ["fabrication", "welder", "welding"],
+    pooja_pandit: ["pooja pandit", "pandit", "pooja"],
+    computer_repair: ["computer repair", "computer", "laptop"],
+    painter: ["painter", "painting", "paint"],
+    marriage_photography: ["photography", "photographer", "marriage photography"],
+    key_maker: ["key maker", "key", "locksmith"],
+    water_supplier: ["water supplier", "water tanker", "tanker"],
+    kabadi_wala: ["kabadi wala", "kabadi", "scrap"],
+    kadiya_mason: ["kadiya - mason", "kadiya", "mason"],
+    vastu_consultant: ["vastu consultant", "vastu"],
+    interior_decorator: ["interior decorator", "interior"],
+    upholstery_repair: ["upholstery (sofa/chair) repairing", "upholstery", "sofa"],
+    inverter_battery: ["inverter & battery", "inverter and battery", "inverter", "battery"]
+  };
+  function matchTrade(t) {
+    const x = String(t || "").trim().toLowerCase();
+    if (!x) return null;
+    for (const [id, words] of Object.entries(TRADE_WORDS)) if (words.includes(x)) return id;
+    return null;
+  }
+  // Approximate centre of each area (no GPS). Longest key wins, so "Nallasopara - Vasai link Rd" beats "Vasai".
+  const AREAS = {
+    "nallasopara - vasai link": { lat: 19.4050, lng: 72.8400, label: "Nallasopara–Vasai link Rd" },
+    "nallasopara east": { lat: 19.4175, lng: 72.8330, label: "Nallasopara East" },
+    "nallasopara west": { lat: 19.4170, lng: 72.8150, label: "Nallasopara West" },
+    "nallasopara": { lat: 19.4170, lng: 72.8250, label: "Nallasopara" },
+    "nalasopara": { lat: 19.4170, lng: 72.8250, label: "Nallasopara" },
+    "vasai east": { lat: 19.3980, lng: 72.8460, label: "Vasai East" },
+    "vasai west": { lat: 19.3780, lng: 72.8250, label: "Vasai West" },
+    "vasai": { lat: 19.3880, lng: 72.8350, label: "Vasai" },
+    "virar east": { lat: 19.4600, lng: 72.8300, label: "Virar East" },
+    "virar west": { lat: 19.4540, lng: 72.7950, label: "Virar West" },
+    "virar": { lat: 19.4560, lng: 72.8110, label: "Virar" },
+    "naigaon": { lat: 19.3520, lng: 72.8470, label: "Naigaon" },
+    "nalasopara east": { lat: 19.4175, lng: 72.8330, label: "Nallasopara East" }
+  };
+  function matchArea(a) {
+    const x = String(a || "").toLowerCase().replace(/[–—]/g, "-").replace(/\s+/g, " ").trim();
+    if (!x) return null;
+    const keys = Object.keys(AREAS).sort((p, q) => q.length - p.length);
+    for (const k of keys) if (x.includes(k)) return AREAS[k];
+    return null;
+  }
+  function cleanPhone(p) {
+    let d = digits(p);
+    if (d.length === 12 && d.startsWith("91")) d = d.slice(2);
+    if (d.length === 11 && d.startsWith("0")) d = d.slice(1);
+    return /^[6-9]\d{9}$/.test(d) ? d : null;
+  }
+  let impRows = [];
+  function parseImport() {
+    const existing = new Set(records.map((r) => r.id));
+    const seen = new Set();
+    impRows = $("imp-text").value.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((line) => {
+      const parts = line.split(/\t|,/).map((x) => x.trim());
+      const [name, trade, number, ...rest] = parts;
+      const phone = cleanPhone(number);
+      const tid = matchTrade(trade);
+      const area = matchArea(rest.join(" "));
+      let state = "ok", why = "";
+      if (!phone) { state = "bad"; why = "Number not valid"; }
+      else if (existing.has(phone)) { state = "skip"; why = "Already in database - skipped"; }
+      else if (seen.has(phone)) { state = "skip"; why = "Repeated in list - skipped"; }
+      else if (!tid) { state = "bad"; why = "Trade not recognised"; }
+      else if (!area) { state = "bad"; why = "Area not recognised"; }
+      if (phone) seen.add(phone);
+      return { name: name || "", phone, tid, area, areaText: rest.join(" "), tradeText: trade, state, why };
+    });
+    const ok = impRows.filter((r) => r.state === "ok");
+    const sk = impRows.filter((r) => r.state === "skip").length;
+    const bd = impRows.filter((r) => r.state === "bad").length;
+    $("imp-result").innerHTML = impRows.length ? `<p style="font-size:13px;font-weight:600;margin:10px 0 6px">${ok.length} will be added · ${sk} skipped · ${bd} need fixing</p>
+      <table class="pv"><thead><tr><th>Technician</th><th>Trade · Area</th><th>Result</th></tr></thead><tbody>${impRows.map((r) =>
+      `<tr><td><div class="nm">${esc(r.name) || "<span class='muted'>(blank)</span>"}</div><div class="ph">${esc(r.phone || "")}</div></td><td>${esc(r.tradeText)}<div class="tr">${esc(r.area ? r.area.label : r.areaText)}</div></td><td class="${r.state === "ok" ? "good" : r.state === "skip" ? "skip" : "bad"}">${r.state === "ok" ? "✓ OK" : esc(r.why)}</td></tr>`).join("")}</tbody></table>
+      ${bd ? '<p class="muted">Rows that need fixing are NOT added. Correct them in the box and tap Check list again.</p>' : ""}` : "";
+    $("imp-add").textContent = `Add ${ok.length} technician${ok.length === 1 ? "" : "s"}`;
+    $("imp-add").disabled = ok.length === 0;
+  }
+  $("imp-check").addEventListener("click", parseImport);
+  $("imp-add").addEventListener("click", async () => {
+    const ok = impRows.filter((r) => r.state === "ok");
+    if (!ok.length) return;
+    if (!confirm(`Add ${ok.length} technician(s) to the database? Customers will see them in the app.\n\nThey are NOT Verified and have 0 enquiries.`)) return;
+    $("imp-add").disabled = true;
+    let done = 0, failed = 0, firstErr = "";
+    for (const r of ok) {
+      try {
+        await F.setDoc(F.doc(db, "technicians", r.phone), {
+          name: r.name, phone: r.phone, trades: [r.tid], lat: r.area.lat, lng: r.area.lng, area: r.area.label,
+          online: false, verified: false, leadCount: 0, imported: true, importedAt: F.serverTimestamp()
+        });
+        done++;
+      } catch (e) { failed++; if (!firstErr) firstErr = e.message || String(e); }
+    }
+    await loadRecords();
+    $("imp-text").value = ""; $("imp-result").innerHTML = ""; impRows = [];
+    $("imp-add").textContent = "Add 0 technicians";
+    if (failed) setStatus(`⚠ ${done} added, ${failed} failed - reason: ${firstErr}`, "err");
+    else setStatus(`✓ ${done} technician(s) added. Use the filter "Added by me · not joined yet" to message them.`, "ok");
+  });
 
   function selectedIds() { return Array.from(document.querySelectorAll(".row-check:checked")).map((c) => c.dataset.id); }
   function updateButtons() {
@@ -163,6 +305,7 @@
     const list = records.filter((r) => {
       if (f === "verified" && r.verified !== true) return false;
       if (f === "unverified" && r.verified === true) return false;
+      if (f === "notjoined" && !notJoined(r)) return false;
       if (["followup", "trialover", "trialrunning", "paid", "hidden"].includes(f) && statusOf(r).key !== f) return false;
       return !q || (r.name || "").toLowerCase().includes(q) || r.id.includes(q);
     });
@@ -172,15 +315,17 @@
       $("rows").innerHTML = list.map((r) => {
         const ph = digits(r.phone || r.id);
         const wa = ph.length === 10 ? "91" + ph : ph;
+        const waText = notJoined(r) ? encodeURIComponent(waMessage(r)) : "";
+        const waQ = waText ? (IS_MOBILE ? "&text=" : "?text=") + waText : "";
         return `<tr>
           <td><input type="checkbox" class="row-check" data-id="${esc(r.id)}" /></td>
           <td><div class="nm">${esc(r.name) || "<span class='muted'>(no name)</span>"}</div>
               <div class="ph">${esc(r.id)}</div>
               <div class="tr">${esc((r.trades || []).join(", "))}</div>
-              <div class="ld">${leadsText(r)}</div></td>
+              <div class="ld">${leadsText(r)}</div>${notJoined(r) ? '<div class="tr">Added by you · ' + esc(r.area || "") + '</div>' : ""}</td>
           <td>${(() => { const st = statusOf(r); return `<span class="chipf ${st.cls}">${st.label}</span><div class="tr">${esc(st.extra)}</div>`; })()}
               <div style="margin-top:4px"><span class="badge ${r.verified === true ? "b-yes" : "b-no"}">${r.verified === true ? "Verified" : "Unverified"}</span></div></td>
-          <td><a class="wa" href="${IS_MOBILE ? "whatsapp://send?phone=" + esc(wa) : "https://wa.me/" + esc(wa)}"${IS_MOBILE ? "" : ' target="_blank" rel="noopener"'}>WhatsApp</a></td>
+          <td><a class="wa" href="${IS_MOBILE ? "whatsapp://send?phone=" + esc(wa) + waQ : "https://wa.me/" + esc(wa) + waQ}"${IS_MOBILE ? "" : ' target="_blank" rel="noopener"'}>WhatsApp</a></td>
         </tr>`;
       }).join("");
     }
