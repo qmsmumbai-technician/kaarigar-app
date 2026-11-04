@@ -40,13 +40,17 @@
   #status { margin-top:12px; font-size:13px; line-height:1.4; }
   .ok { color:#2E8B57; } .err { color:#C7401E; } .muted { color:#8891A0; font-size:12px; }
   #app { display:none; }
+  .chipf { display:inline-block; font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px; }
+  .c-red { background:#F9DEDA; color:#9C2A12; } .c-amb { background:#F7E6C8; color:#8A5A00; } .c-grn { background:#DDF0E3; color:#1F6B42; } .c-gry { background:#E5E7EB; color:#4B5563; }
+  .ld { font-size:12px; color:#1C2541; margin-top:3px; font-weight:600; }
+  #summary { font-size:13px; font-weight:600; margin:0 0 10px; color:#1C2541; }
 </style>
 </head>
 <body>
 
 <div id="login" class="card" style="max-width:420px; margin:30px auto;">
   <h1>Kaarigar Admin</h1>
-  <p class="sub">Sign in to verify or delete technicians.</p>
+  <p class="sub">Sign in to manage technicians.</p>
   <label for="email">Email</label>
   <input type="email" id="email" value="qmsmumbai@gmail.com" autocomplete="username" />
   <label for="password">Password</label>
@@ -67,17 +71,28 @@
   <div class="row">
     <input type="text" id="search" placeholder="Search name or phone…" />
     <select id="filter">
+      <option value="followup" selected>Needs follow-up</option>
+      <option value="trialover">Trial over</option>
+      <option value="trialrunning">Trial running</option>
+      <option value="paid">Paid</option>
+      <option value="hidden">Hidden</option>
       <option value="all">All</option>
-      <option value="unverified" selected>Unverified</option>
       <option value="verified">Verified</option>
+      <option value="unverified">Unverified</option>
     </select>
     <button class="b-ghost" id="btn-refresh" type="button">Refresh</button>
   </div>
   <div class="row">
     <button class="b-ok" id="btn-verify" type="button" disabled>Mark Verified (0)</button>
     <button class="b-warn" id="btn-unverify" type="button" disabled>Remove Verified (0)</button>
+  </div>
+  <div class="row">
+    <button class="b-main" id="btn-paid" type="button" disabled>Mark Paid - 3 months (0)</button>
+    <button class="b-warn" id="btn-hide" type="button" disabled>Hide from customers (0)</button>
+    <button class="b-ghost" id="btn-show" type="button" disabled>Show again (0)</button>
     <button class="b-del" id="btn-delete" type="button" disabled>Delete (0)</button>
   </div>
+  <div id="summary"></div>
 
   <table>
     <thead>
@@ -113,13 +128,33 @@
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
   function digits(s) { return String(s || "").replace(/\D/g, ""); }
 
+  const TRIAL_LEADS = 10, GRACE_LEADS = 2, PAID_DAYS = 90;
+  function ms(t) { return t && t.toMillis ? t.toMillis() : (typeof t === "number" ? t : 0); }
+  function statusOf(r) {
+    const leads = r.leadCount || 0;
+    const paidUntil = ms(r.paidUntil);
+    const paid = paidUntil > Date.now();
+    if (r.hidden === true) return { key: "hidden", label: "Hidden", cls: "c-gry", extra: "Not shown to customers", leads };
+    if (paid) return { key: "paid", label: "Paid", cls: "c-grn", extra: "Paid until " + new Date(paidUntil).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }), leads };
+    if (leads >= TRIAL_LEADS + GRACE_LEADS) return { key: "followup", label: "Needs follow-up", cls: "c-red", extra: "Trial over · extra enquiries used", leads };
+    if (leads >= TRIAL_LEADS) return { key: "trialover", label: "Trial over", cls: "c-amb", extra: (TRIAL_LEADS + GRACE_LEADS - leads) + " of " + GRACE_LEADS + " extra enquiries left", leads };
+    return { key: "trialrunning", label: "Trial running", cls: "c-gry", extra: leads + " of " + TRIAL_LEADS + " enquiries", leads };
+  }
+  function leadsText(r) {
+    const n = r.leadCount || 0;
+    return n > TRIAL_LEADS ? `Enquiries: ${n} (${TRIAL_LEADS} + ${n - TRIAL_LEADS} extra)` : `Enquiries: ${n}`;
+  }
+
   function selectedIds() { return Array.from(document.querySelectorAll(".row-check:checked")).map((c) => c.dataset.id); }
   function updateButtons() {
     const n = selectedIds().length;
     $("btn-verify").textContent = `Mark Verified (${n})`;
     $("btn-unverify").textContent = `Remove Verified (${n})`;
     $("btn-delete").textContent = `Delete (${n})`;
-    ["btn-verify", "btn-unverify", "btn-delete"].forEach((id) => { $(id).disabled = n === 0; });
+    $("btn-paid").textContent = `Mark Paid - 3 months (${n})`;
+    $("btn-hide").textContent = `Hide from customers (${n})`;
+    $("btn-show").textContent = `Show again (${n})`;
+    ["btn-verify", "btn-unverify", "btn-delete", "btn-paid", "btn-hide", "btn-show"].forEach((id) => { $(id).disabled = n === 0; });
   }
 
   function render() {
@@ -128,6 +163,7 @@
     const list = records.filter((r) => {
       if (f === "verified" && r.verified !== true) return false;
       if (f === "unverified" && r.verified === true) return false;
+      if (["followup", "trialover", "trialrunning", "paid", "hidden"].includes(f) && statusOf(r).key !== f) return false;
       return !q || (r.name || "").toLowerCase().includes(q) || r.id.includes(q);
     });
     if (!list.length) {
@@ -140,8 +176,10 @@
           <td><input type="checkbox" class="row-check" data-id="${esc(r.id)}" /></td>
           <td><div class="nm">${esc(r.name) || "<span class='muted'>(no name)</span>"}</div>
               <div class="ph">${esc(r.id)}</div>
-              <div class="tr">${esc((r.trades || []).join(", "))}</div></td>
-          <td><span class="badge ${r.verified === true ? "b-yes" : "b-no"}">${r.verified === true ? "Verified" : "Unverified"}</span></td>
+              <div class="tr">${esc((r.trades || []).join(", "))}</div>
+              <div class="ld">${leadsText(r)}</div></td>
+          <td>${(() => { const st = statusOf(r); return `<span class="chipf ${st.cls}">${st.label}</span><div class="tr">${esc(st.extra)}</div>`; })()}
+              <div style="margin-top:4px"><span class="badge ${r.verified === true ? "b-yes" : "b-no"}">${r.verified === true ? "Verified" : "Unverified"}</span></div></td>
           <td><a class="wa" href="${IS_MOBILE ? "whatsapp://send?phone=" + esc(wa) : "https://wa.me/" + esc(wa)}"${IS_MOBILE ? "" : ' target="_blank" rel="noopener"'}>WhatsApp</a></td>
         </tr>`;
       }).join("");
@@ -157,6 +195,9 @@
       const snap = await F.getDocs(F.collection(db, "technicians"));
       records = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setStatus(`Loaded ${records.length} record(s).`, "ok");
+      const nf = records.filter((r) => statusOf(r).key === "followup").length;
+      const nu = records.filter((r) => r.verified !== true).length;
+      $("summary").textContent = `Needs follow-up: ${nf} · Unverified: ${nu}`;
       render();
     } catch (e) {
       setStatus("⚠ Couldn't load: " + e.message, "err");
@@ -166,7 +207,7 @@
   async function runBatch(verbLabel, fn) {
     const ids = selectedIds();
     if (!ids.length) return;
-    $("btn-verify").disabled = $("btn-unverify").disabled = $("btn-delete").disabled = true;
+    ["btn-verify", "btn-unverify", "btn-delete", "btn-paid", "btn-hide", "btn-show"].forEach((id) => { $(id).disabled = true; });
     setStatus(`${verbLabel} ${ids.length} record(s)…`);
     let done = 0, failed = 0, firstErr = "";
     for (const id of ids) {
@@ -185,6 +226,23 @@
   $("btn-unverify").addEventListener("click", () => {
     if (!confirm(`Remove the Verified tick from ${selectedIds().length} record(s)?`)) return;
     runBatch("Updating", (id) => F.updateDoc(F.doc(db, "technicians", id), { verified: false, verifiedAt: null }));
+  });
+  $("btn-paid").addEventListener("click", () => {
+    const n = selectedIds().length;
+    if (!confirm(`Mark ${n} technician(s) as PAID for ${PAID_DAYS} days (3 months)?\n\nOnly do this after you have received the payment. They will also be shown to customers again if hidden.`)) return;
+    runBatch("Marking paid", (id) => {
+      const r = records.find((x) => x.id === id) || {};
+      const base = Math.max(Date.now(), ms(r.paidUntil));
+      return F.updateDoc(F.doc(db, "technicians", id), { paidUntil: F.Timestamp.fromMillis(base + PAID_DAYS * 86400000), hidden: false });
+    });
+  });
+  $("btn-hide").addEventListener("click", () => {
+    if (!confirm(`Hide ${selectedIds().length} technician(s) from customers?\n\nTheir data stays saved. You can show them again anytime.`)) return;
+    runBatch("Hiding", (id) => F.updateDoc(F.doc(db, "technicians", id), { hidden: true, hiddenAt: F.serverTimestamp() }));
+  });
+  $("btn-show").addEventListener("click", () => {
+    if (!confirm(`Show ${selectedIds().length} technician(s) to customers again?`)) return;
+    runBatch("Showing", (id) => F.updateDoc(F.doc(db, "technicians", id), { hidden: false }));
   });
   $("btn-delete").addEventListener("click", () => {
     const names = selectedIds().map((id) => { const r = records.find((x) => x.id === id); return r && r.name ? `${r.name} (${id})` : id; }).join("\n");
