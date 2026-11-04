@@ -170,6 +170,7 @@
   .live-label { font-size:10px; color:#2E8B57; font-weight:600; letter-spacing:.05em; }
   .recent-dot { width:6px; height:6px; border-radius:50%; background:#C77D1E; }
   .recent-label { font-size:10px; color:#8B5E1E; font-weight:600; letter-spacing:.05em; }
+  .call-note { font-size:11px; font-weight:600; color:#2F6FA8; margin-top:3px; }
   .trade-tag { font-size:9px; color:#8891A0; font-family:'JetBrains Mono',monospace; margin-top:1px; }
   .verified-tick { display:inline-block; width:16px; height:16px; vertical-align:-3px; margin-left:5px; }
   .verified-label { font-size:11px; font-weight:700; color:#2E8B57; margin-left:3px; vertical-align:1px; letter-spacing:.2px; white-space:nowrap; }
@@ -740,9 +741,9 @@ function initUserApp() {
                 t.isLive
                   ? '<span class="live-dot"></span><span class="live-label">LIVE · ONLINE</span>'
                   : t.isOnlineFlag
-                    ? `<span class="recent-dot"></span><span class="recent-label">Active ${timeAgo(t.ageMs)}</span>`
-                    : `<span class="recent-dot"></span><span class="recent-label">Was online, now offline · ${timeAgo(t.ageMs)}</span>`
-              }</div>
+                    ? `<span class="recent-dot"></span><span class="recent-label">Online today · last seen ${timeAgo(t.ageMs)}</span>`
+                    : `<span class="recent-dot"></span><span class="recent-label">Was online · ${timeAgo(t.ageMs)} · Now offline</span>`
+              }</div>${t.isLive ? "" : '<div class="call-note">You can call, he may reply</div>'}
             </div>
           </div>
           ${isAll ? `<div class="trade-pill-row">${(t.trades||[]).map(id => {
