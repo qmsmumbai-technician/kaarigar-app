@@ -404,6 +404,7 @@
       <button type="button" class="trade-chip" data-trade="vastu_consultant" style="--accent:#1B5E3F"><span class="msr">explore</span> Vastu Consultant</button>
       <button type="button" class="trade-chip" data-trade="interior_decorator" style="--accent:#A6597B"><span class="msr">design_services</span> Interior Decorator</button>
       <button type="button" class="trade-chip" data-trade="upholstery_repair" style="--accent:#8B4049"><span class="msr">chair</span> Upholstery (Sofa/Chair) Repairing</button>
+      <button type="button" class="trade-chip" data-trade="inverter_battery" style="--accent:#2F5DA8"><span class="msr">battery_charging_full</span> Inverter &amp; Battery</button>
     </div>
     <p class="hint" id="trade-hint">0 / 2 selected</p>
     <p class="hint" id="trade-confirm-text" style="display:none; color:#1C2541; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; margin-top:6px;"></p>
@@ -517,7 +518,8 @@ function initUserApp() {
     { id:"kadiya_mason", label:"Kadiya - Mason", icon:"construction", color:"#A0522D" },
     { id:"vastu_consultant", label:"Vastu Consultant", icon:"explore", color:"#1B5E3F" },
     { id:"interior_decorator", label:"Interior Decorator", icon:"design_services", color:"#A6597B" },
-    { id:"upholstery_repair", label:"Upholstery (Sofa/Chair) Repairing", icon:"chair", color:"#8B4049" }
+    { id:"upholstery_repair", label:"Upholstery (Sofa/Chair) Repairing", icon:"chair", color:"#8B4049" },
+    { id:"inverter_battery", label:"Inverter & Battery", icon:"battery_charging_full", color:"#2F5DA8" }
   ];
   const TRADE_MAP = Object.fromEntries(TRADES.map(t => [t.id, t]));
   // A technician stays visible for up to VISIBILITY_WINDOW_MS after their last
@@ -902,7 +904,8 @@ function initTechApp() {
     kadiya_mason: { label:"Kadiya - Mason", icon:"construction", color:"#A0522D" },
     vastu_consultant: { label:"Vastu Consultant", icon:"explore", color:"#1B5E3F" },
     interior_decorator: { label:"Interior Decorator", icon:"design_services", color:"#A6597B" },
-    upholstery_repair: { label:"Upholstery (Sofa/Chair) Repairing", icon:"chair", color:"#8B4049" }
+    upholstery_repair: { label:"Upholstery (Sofa/Chair) Repairing", icon:"chair", color:"#8B4049" },
+    inverter_battery: { label:"Inverter & Battery", icon:"battery_charging_full", color:"#2F5DA8" }
   };
   const ALL_TRADE_IDS = Object.keys(TRADES_META);
 
