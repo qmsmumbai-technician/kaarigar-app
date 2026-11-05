@@ -80,6 +80,7 @@
       <option value="trialrunning">Trial running</option>
       <option value="paid">Paid</option>
       <option value="hidden">Hidden</option>
+      <option value="gotenq">Got enquiries (latest first)</option>
       <option value="notjoined">Added by me · not joined yet</option>
       <option value="all">All</option>
       <option value="verified">Verified</option>
@@ -156,6 +157,15 @@
     if (leads >= TRIAL_LEADS + GRACE_LEADS) return { key: "followup", label: "Needs follow-up", cls: "c-red", extra: "Trial over · extra enquiries used", leads };
     if (leads >= TRIAL_LEADS) return { key: "trialover", label: "Trial over", cls: "c-amb", extra: (TRIAL_LEADS + GRACE_LEADS - leads) + " of " + GRACE_LEADS + " extra enquiries left", leads };
     return { key: "trialrunning", label: "Trial running", cls: "c-gry", extra: leads + " of " + TRIAL_LEADS + " enquiries", leads };
+  }
+  function ago(t) {
+    const m = Math.floor((Date.now() - t) / 60000);
+    if (m < 1) return "just now";
+    if (m < 60) return m + " min ago";
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + " hr" + (h === 1 ? "" : "s") + " ago";
+    const d = Math.floor(h / 24);
+    return d + " day" + (d === 1 ? "" : "s") + " ago";
   }
   function notJoined(r) { return r.imported === true && !ms(r.updatedAt); }
   function leadsText(r) {
@@ -306,9 +316,11 @@
       if (f === "verified" && r.verified !== true) return false;
       if (f === "unverified" && r.verified === true) return false;
       if (f === "notjoined" && !notJoined(r)) return false;
+      if (f === "gotenq" && !((r.leadCount || 0) > 0)) return false;
       if (["followup", "trialover", "trialrunning", "paid", "hidden"].includes(f) && statusOf(r).key !== f) return false;
       return !q || (r.name || "").toLowerCase().includes(q) || r.id.includes(q);
     });
+    if (f === "gotenq") list.sort((x, y) => (ms(y.lastLeadAt) - ms(x.lastLeadAt)) || ((y.leadCount || 0) - (x.leadCount || 0)));
     if (!list.length) {
       $("rows").innerHTML = `<tr><td colspan="4" class="muted">No records here.</td></tr>`;
     } else {
@@ -322,7 +334,7 @@
           <td><div class="nm">${esc(r.name) || "<span class='muted'>(no name)</span>"}</div>
               <div class="ph">${esc(r.id)}</div>
               <div class="tr">${esc((r.trades || []).join(", "))}</div>
-              <div class="ld">${leadsText(r)}</div>${notJoined(r) ? '<div class="tr">Added by you · ' + esc(r.area || "") + '</div>' : ""}</td>
+              <div class="ld">${leadsText(r)}</div>${ms(r.lastLeadAt) ? '<div class="tr" style="color:#1F6B42;font-weight:600">Last enquiry ' + ago(ms(r.lastLeadAt)) + '</div>' : ""}${notJoined(r) ? '<div class="tr">Added by you · ' + esc(r.area || "") + '</div>' : ""}</td>
           <td>${(() => { const st = statusOf(r); return `<span class="chipf ${st.cls}">${st.label}</span><div class="tr">${esc(st.extra)}</div>`; })()}
               <div style="margin-top:4px"><span class="badge ${r.verified === true ? "b-yes" : "b-no"}">${r.verified === true ? "Verified" : "Unverified"}</span></div></td>
           <td><a class="wa" href="${IS_MOBILE ? "whatsapp://send?phone=" + esc(wa) + waQ : "https://wa.me/" + esc(wa) + waQ}"${IS_MOBILE ? "" : ' target="_blank" rel="noopener"'}>WhatsApp</a></td>
