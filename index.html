@@ -803,7 +803,11 @@ function initUserApp() {
         const techId = el.dataset.techid;
         // Count at most one enquiry per customer phone per technician per day.
         if (techId && shouldCountCallToday(techId) && db && fsUpdateDoc && fsDocRef && fsIncrement) {
-          fsUpdateDoc(fsDocRef(db, "technicians", techId), { leadCount: fsIncrement(1), lastLeadAt: fsServerTs ? fsServerTs() : Date.now() }).catch(() => {});
+          // Count first on its own (this always worked), then try to stamp the time separately so a rule refusing the time can never block the count.
+          const ref = fsDocRef(db, "technicians", techId);
+          fsUpdateDoc(ref, { leadCount: fsIncrement(1) })
+            .then(() => fsUpdateDoc(ref, { lastLeadAt: fsServerTs ? fsServerTs() : Date.now() }).catch(() => {}))
+            .catch(() => {});
         }
       });
     });
