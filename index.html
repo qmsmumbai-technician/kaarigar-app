@@ -26,20 +26,20 @@
     padding: 24px; text-align: center;
   }
   #role-picker h1 {
-    font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 34px; color: #1C2541; margin: 0 0 6px;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 38px; color: #1C2541; margin: 0 0 6px;
   }
   #role-picker p.tagline {
-    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .2em; color: #C77D1E; margin: 0 0 36px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12.5px; letter-spacing: .16em; color: #C77D1E; margin: 0 0 32px;
   }
   #role-picker .welcome-hi {
     position: absolute; top: max(14px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
     width: 90%; max-width: 360px;
   }
   #role-picker .welcome-hi .greet {
-    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 21px; color: #1C2541; margin: 0 0 8px;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 23px; color: #1C2541; margin: 0 0 8px;
   }
   #role-picker .welcome-hi p {
-    font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; line-height: 1.45; color: #1C2541; margin: 0 0 10px;
+    font-family: 'Inter', sans-serif; font-weight: 500; font-size: 15.5px; line-height: 1.45; color: #1C2541; margin: 0 0 10px;
   }
   #role-picker .welcome-hi p:last-child { margin-bottom: 0; }
   #role-picker .welcome-hi b { color: #C77D1E; }
@@ -82,15 +82,27 @@
     box-shadow: 0 4px 16px rgba(28,37,65,0.12);
   }
   .role-btn .ic { width: 46px; height: 46px; border-radius: 10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .role-btn .txt-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; line-height:1.1; }
-  .role-btn .txt-sub { font-family: 'Inter', sans-serif; font-size: 12px; margin-top:2px; }
+  .role-btn .txt-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; line-height:1.1; }
+  .role-btn .txt-sub { font-family: 'Inter', sans-serif; font-size: 13.5px; margin-top:2px; }
   #btn-role-user { background: #1C2541; }
   #btn-role-user .ic { background: #F2A93B; color:#1C2541; }
   #btn-role-user .txt-title, #btn-role-user .txt-sub { color: #F6F4EF; }
   #btn-role-user .txt-sub { color: #C9CEDC; }
   #btn-role-tech { background: #FBFAF6; border: 1px solid rgba(28,37,65,0.12); }
   #btn-role-tech .ic { background: #1C2541; color:#F2A93B; }
-  #btn-role-tech .txt-title { color: #1C2541; }
+  #btn-role-tech .txt-title { color: #1C2541; font-size: 19px; }
+  #btn-role-user, #btn-role-tech { min-height: 104px; }
+  #role-picker, body:has(#role-picker) { }
+  #role-picker { background: linear-gradient(180deg,#FFF4DC 0%,#FBE3B0 100%); }
+  /* 3D look */
+  #btn-role-user { background: linear-gradient(180deg,#2E3B63 0%,#1C2541 55%,#141B32 100%);
+    box-shadow: 0 6px 0 #0B1022, 0 12px 18px rgba(11,16,34,0.35), inset 0 1.5px 0 rgba(255,255,255,0.22), inset 0 -2px 0 rgba(0,0,0,0.25); }
+  #btn-role-tech { background: linear-gradient(180deg,#FFFFFF 0%,#FBFAF6 55%,#ECE8DC 100%); border: 1px solid rgba(28,37,65,0.14);
+    box-shadow: 0 6px 0 #BDB6A2, 0 12px 18px rgba(28,37,65,0.22), inset 0 1.5px 0 #FFFFFF, inset 0 -2px 0 rgba(0,0,0,0.06); }
+  #btn-role-user .ic, #btn-role-tech .ic { box-shadow: 0 3px 0 rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.35); }
+  .role-btn { transition: transform .08s ease, box-shadow .08s ease; margin-bottom: 24px; }
+  #btn-role-user:active { transform: translateY(5px); box-shadow: 0 1px 0 #0B1022, 0 3px 6px rgba(11,16,34,0.35), inset 0 1.5px 0 rgba(255,255,255,0.22); }
+  #btn-role-tech:active { transform: translateY(5px); box-shadow: 0 1px 0 #BDB6A2, 0 3px 6px rgba(28,37,65,0.22), inset 0 1.5px 0 #FFFFFF; }
   #btn-role-tech .txt-sub { color: #8891A0; }
 
   /* ---- User app styles ---- */
@@ -264,18 +276,18 @@
 <div id="role-picker">
   <div class="welcome-hi">
     <div class="greet">नमस्ते !</div>
-    <p>अगर आप कस्टमर हैं तो <b>"For User"</b> बटन दबाएं और आपको जो सर्विस चाहिए वो सेलेक्ट करें और कारीगर को कॉल करें।</p>
-    <p>अगर आप कारीगर टेक्नीशियन हैं तो <b>"For Kaarigar Technician"</b> बटन दबाएं।</p>
+    <p>अगर आप कस्टमर हैं तो <b>"For User"</b> बटन दबाएं और आपको जो सर्विस चाहिए वो सेलेक्ट करें और कारीगर, कंसल्टेंट या एडवाइज़र को कॉल करें।</p>
+    <p>अगर आप कारीगर, कंसल्टेंट या एडवाइज़र हैं तो <b>"For Kaarigar, Consultant, Advisor - Skilled People"</b> बटन दबाएं।</p>
   </div>
-  <h1>KAARIGAR</h1>
-  <p class="tagline">CONNECTING TECHNICIANS FOR HOME SERVICE</p>
+  <h1>My Kaarigar</h1>
+  <p class="tagline">CONNECTING KAARIGAR, CONSULTANT &amp; ADVISOR FOR HOME SERVICE</p>
   <button class="role-btn" id="btn-role-user">
     <div class="ic"><span class="msr" style="font-size:22px">person</span></div>
-    <div><div class="txt-title">For User</div><div class="txt-sub">Find a technician near you</div></div>
+    <div><div class="txt-title">For User</div><div class="txt-sub">Find Kaarigar, Consultant &amp; Advisor near you</div></div>
   </button>
   <button class="role-btn" id="btn-role-tech">
     <div class="ic"><span class="msr" style="font-size:22px">engineering</span></div>
-    <div><div class="txt-title">For Kaarigar Technician</div><div class="txt-sub">Go online, get matched with nearby users</div></div>
+    <div><div class="txt-title">For Kaarigar, Consultant, Advisor - Skilled People</div><div class="txt-sub">Go online, get nearby users</div></div>
   </button>
   <img src="company-footer.jpg" alt="Abode Digital Technology — Making Life Easier" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); width:80%; max-width:300px; border-radius:8px; opacity:0.92;" />
 </div>
