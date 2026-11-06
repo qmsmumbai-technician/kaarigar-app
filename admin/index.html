@@ -23,8 +23,11 @@
   .b-del { background:#C7401E; color:#fff; }
   .b-ghost { background:#E9E5D9; color:#1C2541; }
   .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
-  .row > input[type=text] { flex:1; min-width:140px; width:auto; }
-  .row > select { width:auto; }
+  .row > input[type=text] { flex:1 1 100%; min-width:140px; width:auto; }
+  .row > select { flex:1; width:auto; min-width:0; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+  .grid2 button { min-height:46px; padding:8px 10px; line-height:1.2; }
+  .grid2 .wide { grid-column:1 / -1; }
   .topbar { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px; }
   table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08); }
   th, td { text-align:left; padding:10px 8px; font-size:13px; border-bottom:1px solid #EEEAE0; vertical-align:top; }
@@ -88,15 +91,14 @@
     </select>
     <button class="b-ghost" id="btn-refresh" type="button">Refresh</button>
   </div>
-  <div class="row">
+  <div class="grid2">
     <button class="b-ok" id="btn-verify" type="button" disabled>Mark Verified (0)</button>
     <button class="b-warn" id="btn-unverify" type="button" disabled>Remove Verified (0)</button>
-  </div>
-  <div class="row">
     <button class="b-main" id="btn-paid" type="button" disabled>Mark Paid - 3 months (0)</button>
     <button class="b-warn" id="btn-hide" type="button" disabled>Hide from customers (0)</button>
     <button class="b-ghost" id="btn-show" type="button" disabled>Show again (0)</button>
     <button class="b-del" id="btn-delete" type="button" disabled>Delete (0)</button>
+    <button class="b-main wide" id="btn-backup" type="button">⬇ Download backup (all technicians)</button>
   </div>
   <details class="imp" id="imp">
     <summary>Import technicians (added by you)</summary>
@@ -360,6 +362,38 @@
       setStatus("⚠ Couldn't load: " + e.message, "err");
     }
   }
+
+  function tsText(v) {
+    try {
+      if (v == null || v === "") return "";
+      if (typeof v.toDate === "function") return v.toDate().toISOString();
+      if (typeof v === "number") return new Date(v).toISOString();
+      return String(v);
+    } catch (e) { return ""; }
+  }
+  function downloadBackup() {
+    if (!records.length) { setStatus("Nothing to back up yet - tap Refresh first.", "err"); return; }
+    const cols = ["phone","name","trades","area","lat","lng","online","verified","verifiedAt","leadCount","lastLeadAt","trialStartAt","paidUntil","hidden","hiddenAt","imported","importedAt","updatedAt","rating"];
+    const esc = (v) => { const t = String(v == null ? "" : v); return /[",\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+    const cell = (r, c) => {
+      const v = r[c];
+      if (c === "phone") return String(r.phone || r.id || "");
+      if (c === "trades") return Array.isArray(v) ? v.join(" | ") : "";
+      if (/At$|Until$/.test(c)) return tsText(v);
+      return v == null ? "" : v;
+    };
+    const lines = [cols.join(",")].concat(records.map((r) => cols.map((c) => esc(cell(r, c))).join(",")));
+    const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const d = new Date();
+    const stamp = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "kaarigar-technicians-backup-" + stamp + ".csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    setStatus("✓ Backup downloaded: " + records.length + " technicians.", "ok");
+  }
+  $("btn-backup").addEventListener("click", downloadBackup);
 
   async function runBatch(verbLabel, fn) {
     const ids = selectedIds();
