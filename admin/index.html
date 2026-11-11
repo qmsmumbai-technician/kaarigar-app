@@ -51,10 +51,26 @@
   textarea { width:100%; min-height:110px; padding:10px 12px; border:1px solid #D8D4C8; border-radius:8px; font-size:13px; font-family:Consolas,monospace; }
   .pv td { font-size:12.5px; padding:7px 6px; } .pv .bad { color:#C7401E; font-weight:600; } .pv .good { color:#1F6B42; font-weight:600; } .pv .skip { color:#8A5A00; font-weight:600; }
   #summary { font-size:13px; font-weight:600; margin:0 0 10px; color:#1C2541; }
+  .b-chg { background:#E9E5D9; color:#1C2541; font-size:12px; padding:6px 10px; margin-top:6px; }
+  #ct-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:50; align-items:center; justify-content:center; padding:20px; }
+  #ct-box { background:#fff; border-radius:14px; padding:18px; width:100%; max-width:380px; box-shadow:0 8px 28px rgba(0,0,0,.3); }
 </style>
 </head>
 <body>
 
+<div id="ct-modal"><div id="ct-box">
+  <h1 style="font-size:17px">Change / Remove Trade</h1>
+  <label>Technician's mobile number</label>
+  <div class="row" style="margin:0"><input type="text" id="ct-phone" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" style="flex:1 1 60%" /><button class="b-main" id="ct-find" type="button">Find</button></div>
+  <div id="ct-found" style="display:none">
+    <div style="background:#F6F4EF;border-radius:8px;padding:10px;margin:10px 0"><div class="nm" id="ct-name"></div><div class="tr" id="ct-cur" style="font-size:12.5px;color:#1C2541"></div></div>
+    <div class="grid2" style="margin-bottom:8px"><button class="b-main" id="ct-m-change" type="button">Change a trade</button><button class="b-ghost" id="ct-m-remove" type="button">Remove one trade</button></div>
+    <div id="ct-oldwrap"><label id="ct-oldlbl">Which trade?</label><select id="ct-old"></select></div>
+    <div id="ct-newwrap"><label>New trade</label><select id="ct-new"></select></div>
+  </div>
+  <div class="row" style="margin:14px 0 0"><button class="b-ok" id="ct-save" type="button" disabled>Save</button><button class="b-ghost" id="ct-cancel" type="button">Cancel</button></div>
+  <div id="ct-msg" class="muted" style="margin-top:8px"></div>
+</div></div>
 <div id="login" class="card" style="max-width:420px; margin:30px auto;">
   <h1>Kaarigar Admin</h1>
   <p class="sub">Sign in to manage technicians.</p>
@@ -98,6 +114,7 @@
     <button class="b-warn" id="btn-hide" type="button" disabled>Hide from customers (0)</button>
     <button class="b-ghost" id="btn-show" type="button" disabled>Show again (0)</button>
     <button class="b-del" id="btn-delete" type="button" disabled>Delete (0)</button>
+    <button class="b-main wide" id="btn-chgtrade" type="button">✎ Change / Remove Trade (by mobile number)</button>
     <button class="b-main wide" id="btn-backup" type="button">⬇ Download backup (all technicians)</button>
   </div>
   <details class="imp" id="imp">
@@ -214,6 +231,8 @@
     private_chef: ["private chef - external home cook", "private chef", "home cook", "cook", "chef", "rasoiya", "khana banane wali"],
     garden_care: ["trimming & watering - home garden", "trimming & watering", "trimming and watering", "home garden", "garden care", "garden", "gardener", "mali"]
   };
+  const TRADE_LABELS = {plumbing:"Plumber",electrical:"Electrician",carpentry:"Carpenter",ac_technician:"AC Technician",ro_water:"RO / Water Purifier",washing_machine:"Washing Machine",refrigerator:"Refrigerator",tv_repair:"TV Repairing",home_cleaning:"Home Cleaning",pest_control:"Pest Control",window_sliding:"Window Sliding",fabrication:"Fabrication",pooja_pandit:"Pooja Pandit",computer_repair:"Computer Repair",painter:"Painter",marriage_photography:"Photography",key_maker:"Key Maker",water_supplier:"Water Supplier",kabadi_wala:"Kabadi Wala",kadiya_mason:"Kadiya - Mason",vastu_consultant:"Vastu Consultant",interior_decorator:"Interior Decorator",upholstery_repair:"Upholstery (Sofa/Chair) Repairing",inverter_battery:"Inverter & Battery",private_chef:"Private Chef - External Home Cook",garden_care:"Trimming & Watering - Home Garden"};
+  const tradeLabel = (id) => TRADE_LABELS[id] || id;
   function matchTrade(t) {
     const x = String(t || "").trim().toLowerCase();
     if (!x) return null;
@@ -337,7 +356,7 @@
           <td><input type="checkbox" class="row-check" data-id="${esc(r.id)}" /></td>
           <td><div class="nm">${esc(r.name) || "<span class='muted'>(no name)</span>"}</div>
               <div class="ph">${esc(r.id)}</div>
-              <div class="tr">${esc((r.trades || []).join(", "))}</div>
+              <div class="tr">${esc((r.trades || []).map(tradeLabel).join(", "))}</div>
               <div class="ld">${leadsText(r)}</div>${ms(r.lastLeadAt) ? '<div class="tr" style="color:#1F6B42;font-weight:600">Last enquiry ' + ago(ms(r.lastLeadAt)) + '</div>' : ""}${notJoined(r) ? '<div class="tr">Added by you · ' + esc(r.area || "") + '</div>' : ""}</td>
           <td>${(() => { const st = statusOf(r); return `<span class="chipf ${st.cls}">${st.label}</span><div class="tr">${esc(st.extra)}</div>`; })()}
               <div style="margin-top:4px"><span class="badge ${r.verified === true ? "b-yes" : "b-no"}">${r.verified === true ? "Verified" : "Unverified"}</span></div></td>
@@ -349,6 +368,59 @@
     document.querySelectorAll(".row-check").forEach((c) => c.addEventListener("change", updateButtons));
     updateButtons();
   }
+
+
+  // ---- Change / Remove trade (admin only, by mobile number) ----
+  let ctRec = null, ctMode = "change";
+  const optHtml = (ids) => ids.map((id) => `<option value="${id}">${esc(tradeLabel(id))}</option>`).join("");
+  function ctSetMode(m) {
+    ctMode = m;
+    const cur = (ctRec.trades || []).filter(Boolean);
+    $("ct-m-change").className = m === "change" ? "b-main" : "b-ghost";
+    $("ct-m-remove").className = m === "remove" ? "b-main" : "b-ghost";
+    $("ct-newwrap").style.display = m === "change" ? "block" : "none";
+    $("ct-oldlbl").textContent = m === "change" ? "Which trade to replace?" : "Which trade to remove?";
+    $("ct-oldwrap").style.display = cur.length > 1 || m === "change" ? "block" : "none";
+    if (m === "remove" && cur.length < 2) { $("ct-msg").textContent = "He has only one trade - it can't be removed. Use 'Change a trade' instead."; $("ct-save").disabled = true; }
+    else { $("ct-msg").textContent = ""; $("ct-save").disabled = false; }
+  }
+  $("btn-chgtrade").addEventListener("click", () => {
+    ctRec = null; $("ct-phone").value = ""; $("ct-found").style.display = "none"; $("ct-msg").textContent = ""; $("ct-save").disabled = true;
+    $("ct-modal").style.display = "flex";
+  });
+  $("ct-find").addEventListener("click", () => {
+    const ph = digits($("ct-phone").value);
+    ctRec = records.find((r) => r.id === ph || digits(r.phone || "") === ph);
+    if (!ctRec) { $("ct-found").style.display = "none"; $("ct-save").disabled = true; $("ct-msg").textContent = "No technician found with this number."; return; }
+    const cur = (ctRec.trades || []).filter(Boolean);
+    $("ct-name").textContent = `${ctRec.name || "(no name)"} · ${ctRec.id}`;
+    $("ct-cur").textContent = "Current: " + (cur.map(tradeLabel).join("  +  ") || "none");
+    $("ct-old").innerHTML = optHtml(cur);
+    $("ct-new").innerHTML = optHtml(Object.keys(TRADE_LABELS).filter((id) => !cur.includes(id)));
+    $("ct-found").style.display = "block";
+    ctSetMode("change");
+  });
+  $("ct-m-change").addEventListener("click", () => ctRec && ctSetMode("change"));
+  $("ct-m-remove").addEventListener("click", () => ctRec && ctSetMode("remove"));
+  $("ct-cancel").addEventListener("click", () => { $("ct-modal").style.display = "none"; });
+  $("ct-save").addEventListener("click", async () => {
+    if (!ctRec) return;
+    const cur = (ctRec.trades || []).filter(Boolean);
+    const oldId = $("ct-old").value, newId = $("ct-new").value;
+    let next;
+    if (ctMode === "remove") { if (cur.length < 2) return; next = cur.filter((t) => t !== oldId); }
+    else { if (!newId) return; next = cur.length ? cur.map((t) => (t === oldId ? newId : t)) : [newId]; }
+    $("ct-save").disabled = true; $("ct-msg").textContent = "Saving…";
+    try {
+      await F.updateDoc(F.doc(db, "technicians", ctRec.id), { trades: next });
+      ctRec.trades = next;
+      $("ct-modal").style.display = "none";
+      setStatus(`✓ ${ctRec.name || ctRec.id}: now ${next.map(tradeLabel).join(" + ")}.`, "ok");
+      render();
+    } catch (err) {
+      $("ct-msg").textContent = "⚠ Couldn't save: " + err.message; $("ct-save").disabled = false;
+    }
+  });
 
   async function loadRecords() {
     setStatus("Loading…");
