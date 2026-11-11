@@ -93,10 +93,10 @@
   #btn-role-tech .txt-title { color: #1C2541; font-size: 19px; }
   #btn-role-user, #btn-role-tech { min-height: 104px; }
   #role-picker, body:has(#role-picker) { }
-  /* first screen: keep the Follow us block clear of the buttons on shorter phones */
-  @media (max-height: 790px) { #role-bottom .rb-card { width: 52% !important; max-width: 188px !important; } #role-bottom { bottom: 10px !important; } }
-  @media (max-height: 725px) { #role-bottom .fl-text { display: none; } #soc-follow { margin-bottom: 6px; } }
-  @media (max-height: 690px) { #soc-follow { display: none; } }
+  /* first screen: keep the Follow us row clear of the buttons on shorter phones */
+  @media (max-height: 745px) { #role-bottom .rb-card { width: 70% !important; max-width: 250px !important; } }
+  @media (max-height: 705px) { #role-bottom .rb-card { width: 60% !important; max-width: 210px !important; } #role-bottom .fl-text { display: none !important; } }
+  @media (max-height: 675px) { #soc-follow { display: none !important; } }
   #role-picker { background: linear-gradient(180deg,#FFF4DC 0%,#FBE3B0 100%); }
   /* 3D look */
   #btn-role-user { background: linear-gradient(180deg,#2E3B63 0%,#1C2541 55%,#141B32 100%);
@@ -293,15 +293,13 @@
     <div class="ic"><span class="msr" style="font-size:22px">engineering</span></div>
     <div><div class="txt-title">For Kaarigar, Consultant, Advisor - Skilled People</div><div class="txt-sub">Go online, get nearby users</div></div>
   </button>
-  <div id="role-bottom" style="position:absolute;left:0;right:0;bottom:14px;display:flex;flex-direction:column;align-items:center">
-  <div id="soc-follow" style="text-align:center;margin-bottom:6px">
-    <div class="fl-text" style="font-size:12.5px;color:#5b6475;line-height:1.4;margin-bottom:4px">Follow us <b>@mykaarigar</b> &nbsp;·&nbsp; हमें फॉलो करें</div>
-    <div style="display:flex;gap:44px;justify-content:center">
-      <a href="https://www.youtube.com/@mykaarigar" target="_blank" rel="noopener" aria-label="My Kaarigar on YouTube" style="display:block;width:38px;height:38px"><svg viewBox="0 0 48 48" width="38" height="38"><rect width="48" height="48" rx="12" fill="#FF0000"/><path d="M19 15.5v17l15-8.5z" fill="#fff"/></svg></a>
-      <a href="https://www.instagram.com/mykaarigar" target="_blank" rel="noopener" aria-label="My Kaarigar on Instagram" style="display:block;width:38px;height:38px"><svg viewBox="0 0 48 48" width="38" height="38"><defs><linearGradient id="igg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FEDA75"/><stop offset=".3" stop-color="#FA7E1E"/><stop offset=".55" stop-color="#D62976"/><stop offset=".8" stop-color="#962FBF"/><stop offset="1" stop-color="#4F5BD5"/></linearGradient></defs><rect width="48" height="48" rx="12" fill="url(#igg)"/><rect x="12.5" y="12.5" width="23" height="23" rx="7" fill="none" stroke="#fff" stroke-width="3"/><circle cx="24" cy="24" r="5.5" fill="none" stroke="#fff" stroke-width="3"/><circle cx="31" cy="17" r="1.8" fill="#fff"/></svg></a>
+  <div id="role-bottom" style="position:absolute;left:0;right:0;bottom:12px;display:flex;flex-direction:column;align-items:center">
+    <div id="soc-follow" style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px">
+      <a href="https://www.youtube.com/@mykaarigar" target="_blank" rel="noopener" aria-label="My Kaarigar on YouTube" style="display:block;width:36px;height:36px"><svg viewBox="0 0 48 48" width="36" height="36"><rect width="48" height="48" rx="12" fill="#FF0000"/><path d="M19 15.5v17l15-8.5z" fill="#fff"/></svg></a>
+      <div class="fl-text" style="font-size:12.5px;color:#5b6475;line-height:1.3;text-align:center">Follow us <b>@mykaarigar</b><br>हमें फॉलो करें</div>
+      <a href="https://www.instagram.com/mykaarigar" target="_blank" rel="noopener" aria-label="My Kaarigar on Instagram" style="display:block;width:36px;height:36px"><svg viewBox="0 0 48 48" width="36" height="36"><defs><linearGradient id="igg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#FEDA75"/><stop offset=".3" stop-color="#FA7E1E"/><stop offset=".55" stop-color="#D62976"/><stop offset=".8" stop-color="#962FBF"/><stop offset="1" stop-color="#4F5BD5"/></linearGradient></defs><rect width="48" height="48" rx="12" fill="url(#igg)"/><rect x="12.5" y="12.5" width="23" height="23" rx="7" fill="none" stroke="#fff" stroke-width="3"/><circle cx="24" cy="24" r="5.5" fill="none" stroke="#fff" stroke-width="3"/><circle cx="31" cy="17" r="1.8" fill="#fff"/></svg></a>
     </div>
-  </div>
-    <img class="rb-card" src="company-footer.jpg" alt="Abode Digital Technology — Making Life Easier" style="display:block;width:70%;max-width:250px;border-radius:8px;opacity:0.92;" />
+    <img class="rb-card" src="company-footer.jpg" alt="Abode Digital Technology — Making Life Easier" style="display:block;width:80%;max-width:300px;border-radius:8px;opacity:0.92;" />
   </div>
 </div>
 
