@@ -433,6 +433,7 @@
       <button type="button" class="trade-chip" data-trade="inverter_battery" style="--accent:#2F5DA8"><span class="msr">battery_charging_full</span> Inverter &amp; Battery</button>
       <button type="button" class="trade-chip" data-trade="garden_care" style="--accent:#3E8E41"><span class="msr">yard</span> Trimming &amp; Watering - Home Garden</button>
       <button type="button" class="trade-chip" data-trade="private_chef" style="--accent:#E8761B"><span class="msr">skillet</span> Private Chef - External Home Cook</button>
+      <button type="button" class="trade-chip" data-trade="trip_driver" style="--accent:#2B3B7A"><span class="msr">local_taxi</span> Trip Base Driver - Chauffeur</button>
     </div>
     <p class="hint" id="trade-hint">0 / 2 selected</p>
     <p class="hint" id="trade-confirm-text" style="display:none; color:#1C2541; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; margin-top:6px;"></p>
@@ -549,7 +550,8 @@ function initUserApp() {
     { id:"upholstery_repair", label:"Upholstery (Sofa/Chair) Repairing", icon:"chair", color:"#8B4049" },
     { id:"inverter_battery", label:"Inverter & Battery", icon:"battery_charging_full", color:"#2F5DA8" },
     { id:"garden_care", label:"Trimming & Watering - Home Garden", icon:"yard", color:"#3E8E41" },
-    { id:"private_chef", label:"Private Chef - External Home Cook", icon:"skillet", color:"#E8761B" }
+    { id:"private_chef", label:"Private Chef - External Home Cook", icon:"skillet", color:"#E8761B" },
+    { id:"trip_driver", label:"Trip Base Driver - Chauffeur", icon:"local_taxi", color:"#2B3B7A" }
   ];
   const TRADE_MAP = Object.fromEntries(TRADES.map(t => [t.id, t]));
   // A technician stays visible for up to VISIBILITY_WINDOW_MS after their last
@@ -977,7 +979,8 @@ function initTechApp() {
     upholstery_repair: { label:"Upholstery (Sofa/Chair) Repairing", icon:"chair", color:"#8B4049" },
     inverter_battery: { label:"Inverter & Battery", icon:"battery_charging_full", color:"#2F5DA8" },
     garden_care: { label:"Trimming & Watering - Home Garden", icon:"yard", color:"#3E8E41" },
-    private_chef: { label:"Private Chef - External Home Cook", icon:"skillet", color:"#E8761B" }
+    private_chef: { label:"Private Chef - External Home Cook", icon:"skillet", color:"#E8761B" },
+    trip_driver: { label:"Trip Base Driver - Chauffeur", icon:"local_taxi", color:"#2B3B7A" }
   };
   const ALL_TRADE_IDS = Object.keys(TRADES_META);
 
