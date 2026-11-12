@@ -723,6 +723,47 @@ function initUserApp() {
   // so repeat taps by the same customer on the same technician count only once a day.
   // Stores only { technicianId: "YYYY-MM-DD" } - no customer details. If storage is
   // unavailable the call is simply counted (never blocks the call itself).
+  // ---- Daily contact limit: a customer's phone may contact technicians in at most 3 different trades per day ----
+  const MAX_TRADES_PER_DAY = 3;
+  function istToday() {
+    const d = new Date(Date.now() + 330 * 60000 + new Date().getTimezoneOffset() * 60000);
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  // Returns true if this contact tap is allowed (and records the trade as used today).
+  function tradeLimitAllows(tradeIds) {
+    const KEY = "kaarigar_trades_today";
+    const ids = (tradeIds || []).filter(Boolean);
+    if (!ids.length) return true;
+    try {
+      const today = istToday();
+      let st = {}; try { st = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch { st = {}; }
+      if (st.day !== today || !Array.isArray(st.trades)) st = { day: today, trades: [] };
+      if (ids.some((id) => st.trades.includes(id))) return true;   // an already-opened trade stays free
+      if (st.trades.length >= MAX_TRADES_PER_DAY) return false;
+      st.trades.push(ids[0]);
+      localStorage.setItem(KEY, JSON.stringify(st));
+      return true;
+    } catch { return true; }
+  }
+  function showTradeLimitMsg() {
+    let el = document.getElementById("tradeLimitBg");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "tradeLimitBg";
+      el.style.cssText = "position:fixed;inset:0;background:rgba(10,14,25,.55);z-index:1100;display:flex;align-items:center;justify-content:center;padding:24px";
+      el.innerHTML = `<div style="background:#fff;border-radius:18px;padding:22px 20px;max-width:340px;width:100%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.3)">
+        <div style="font-size:34px">🔒</div>
+        <div style="font-weight:800;font-size:17px;color:#1C2541;margin-top:6px">आज की सीमा पूरी हुई<br><span style="font-size:14px;font-weight:600;color:#5A6072">Today's limit reached</span></div>
+        <p style="font-size:14px;color:#3b4252;line-height:1.5;margin:12px 0 4px">एक दिन में ${MAX_TRADES_PER_DAY} अलग सर्विस के कारीगरों से संपर्क कर सकते हैं। कल फिर कोशिश करें।</p>
+        <p style="font-size:13px;color:#5A6072;line-height:1.45;margin:0 0 14px">You can contact technicians of ${MAX_TRADES_PER_DAY} different services per day. Please try again tomorrow, or WhatsApp us for help.</p>
+        <a href="https://wa.me/919860046593" target="_blank" rel="noopener" style="display:block;background:#25D366;color:#fff;font-weight:800;border-radius:12px;padding:12px;text-decoration:none;margin-bottom:8px">WhatsApp 9860046593</a>
+        <button type="button" id="tradeLimitOk" style="width:100%;border:0;background:#EEF0F4;color:#1C2541;font-weight:700;border-radius:12px;padding:12px;font-size:15px">ठीक है / OK</button></div>`;
+      document.body.appendChild(el);
+      el.querySelector("#tradeLimitOk").addEventListener("click", () => { el.style.display = "none"; });
+    }
+    el.style.display = "flex";
+  }
+
   function shouldCountCallToday(techId) {
     const KEY = "kaarigar_called";
     const d = new Date();
@@ -819,17 +860,23 @@ function initUserApp() {
             <span>⏱ ~${etaMin(t.distance)} min</span>`}
           </div>
           <a class="call-btn" href="tel:${t.phone || ""}" data-techid="${t._id || ""}">📞 Call ${(t.name || "technician").split(" ")[0]}</a>
-          <button type="button" class="loc-btn" data-phone="${t.phone || ""}" data-name="${(t.name || "technician").split(" ")[0].replace(/"/g,"")}">📍 Send my address &amp; location</button>
+          <button type="button" class="loc-btn" data-techid="${t._id || ""}" data-phone="${t.phone || ""}" data-name="${(t.name || "technician").split(" ")[0].replace(/"/g,"")}">📍 Send my address &amp; location</button>
         </div>
       </div>`;
     }).join("");
 
     document.querySelectorAll(".loc-btn").forEach((el) => {
-      el.addEventListener("click", () => openLocSheet(el.dataset.phone, el.dataset.name));
+      el.addEventListener("click", () => {
+        const t = sorted.find((x) => (x._id || "") === el.dataset.techid);
+        if (!tradeLimitAllows(isAll ? (t && t.trades) : [currentTrade])) { showTradeLimitMsg(); return; }
+        openLocSheet(el.dataset.phone, el.dataset.name);
+      });
     });
     document.querySelectorAll(".call-btn").forEach((el) => {
-      el.addEventListener("click", () => {
+      el.addEventListener("click", (ev) => {
         const techId = el.dataset.techid;
+        const tt = sorted.find((x) => (x._id || "") === techId);
+        if (!tradeLimitAllows(isAll ? (tt && tt.trades) : [currentTrade])) { ev.preventDefault(); showTradeLimitMsg(); return; }
         // Count at most one enquiry per customer phone per technician per day.
         if (techId && shouldCountCallToday(techId) && db && fsUpdateDoc && fsDocRef && fsIncrement) {
           // Count first on its own (this always worked), then try to stamp the time separately so a rule refusing the time can never block the count.
