@@ -120,7 +120,7 @@
   <details class="imp" id="imp">
     <summary>Import technicians (added by you)</summary>
     <div class="box">
-      <p class="muted" style="margin:0 0 6px">One per line: <b>Name, Trade, Number, Area</b> (comma or tab). Nothing is saved until you tap Add.</p>
+      <p class="muted" style="margin:0 0 6px">One per line: <b>Name, Trade, Number, Area</b> (comma or tab). For any place not known, add a <b>Google Maps link</b> or <b>lat, lng</b> at the end. Nothing is saved until you tap Add.</p>
       <textarea id="imp-text" placeholder="Bablu, Carpenter, 7387871040, Nallasopara - Vasai link Rd"></textarea>
       <div class="row" style="margin-top:8px">
         <button class="b-main" id="imp-check" type="button">Check list</button>
@@ -254,8 +254,57 @@
     "virar west": { lat: 19.4540, lng: 72.7950, label: "Virar West" },
     "virar": { lat: 19.4560, lng: 72.8110, label: "Virar" },
     "naigaon": { lat: 19.3520, lng: 72.8470, label: "Naigaon" },
-    "nalasopara east": { lat: 19.4175, lng: 72.8330, label: "Nallasopara East" }
+    "nalasopara east": { lat: 19.4175, lng: 72.8330, label: "Nallasopara East" },
+    "nallasopra": { lat: 19.4170, lng: 72.8250, label: "Nallasopara" },
+    "nalasopra": { lat: 19.4170, lng: 72.8250, label: "Nallasopara" },
+    "nala sopara": { lat: 19.4170, lng: 72.8250, label: "Nallasopara" },
+    "nallasoppara": { lat: 19.4170, lng: 72.8250, label: "Nallasopara" },
+    "mira road": { lat: 19.2813, lng: 72.8688, label: "Mira Road" },
+    "mira bhayandar": { lat: 19.2900, lng: 72.8600, label: "Mira Bhayandar" },
+    "bhayandar east": { lat: 19.3015, lng: 72.8570, label: "Bhayandar East" },
+    "bhayandar west": { lat: 19.3040, lng: 72.8450, label: "Bhayandar West" },
+    "bhayandar": { lat: 19.3010, lng: 72.8510, label: "Bhayandar" },
+    "bhayander": { lat: 19.3010, lng: 72.8510, label: "Bhayandar" },
+    "dahisar": { lat: 19.2500, lng: 72.8590, label: "Dahisar" },
+    "borivali": { lat: 19.2307, lng: 72.8567, label: "Borivali" },
+    "kandivali": { lat: 19.2043, lng: 72.8530, label: "Kandivali" },
+    "malad": { lat: 19.1860, lng: 72.8480, label: "Malad" },
+    "goregaon": { lat: 19.1663, lng: 72.8526, label: "Goregaon" },
+    "jogeshwari": { lat: 19.1360, lng: 72.8490, label: "Jogeshwari" },
+    "andheri": { lat: 19.1197, lng: 72.8464, label: "Andheri" },
+    "vile parle": { lat: 19.0990, lng: 72.8440, label: "Vile Parle" },
+    "santacruz": { lat: 19.0810, lng: 72.8410, label: "Santacruz" },
+    "bandra": { lat: 19.0596, lng: 72.8295, label: "Bandra" },
+    "kurla": { lat: 19.0726, lng: 72.8795, label: "Kurla" },
+    "ghatkopar": { lat: 19.0860, lng: 72.9080, label: "Ghatkopar" },
+    "chembur": { lat: 19.0522, lng: 72.9005, label: "Chembur" },
+    "mulund": { lat: 19.1726, lng: 72.9425, label: "Mulund" },
+    "thane": { lat: 19.2183, lng: 72.9781, label: "Thane" },
+    "dadar": { lat: 19.0178, lng: 72.8478, label: "Dadar" },
+    "vashi": { lat: 19.0771, lng: 72.9986, label: "Vashi" },
+    "panvel": { lat: 18.9894, lng: 73.1175, label: "Panvel" },
+    "kalyan": { lat: 19.2437, lng: 73.1355, label: "Kalyan" },
+    "dombivli": { lat: 19.2183, lng: 73.0868, label: "Dombivli" },
+    "palghar": { lat: 19.6970, lng: 72.7650, label: "Palghar" },
+    "boisar": { lat: 19.8030, lng: 72.7550, label: "Boisar" }
   };
+  // Exact position typed/pasted on the line: Google Maps long link, or "lat, lng" copied from Maps (long-press a spot).
+  function pullPin(line) {
+    let rest = line, pin = null, note = "";
+    const url = rest.match(/https?:\/\/\S+/i);
+    if (url) {
+      const u = decodeURIComponent(url[0]);
+      rest = rest.replace(url[0], " ");
+      let m = u.match(/!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)/) || u.match(/@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/) || u.match(/[?&](?:q|ll|query|destination)=(-?\d{1,2}\.\d+)(?:,|\s)\s*(-?\d{1,3}\.\d+)/);
+      if (m) pin = { lat: +m[1], lng: +m[2] };
+      else note = "Link has no position - open it in Google Maps and copy the long link, or long-press the spot and copy the numbers";
+    } else {
+      const m = rest.match(/(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{2,3}\.\d{3,})/);
+      if (m) { pin = { lat: +m[1], lng: +m[2] }; rest = rest.replace(m[0], " "); }
+    }
+    if (pin && !(pin.lat >= 6 && pin.lat <= 37 && pin.lng >= 68 && pin.lng <= 98)) { pin = null; note = "Position is outside India - check the link"; }
+    return { rest, pin, note };
+  }
   function matchArea(a) {
     const x = String(a || "").toLowerCase().replace(/[–—]/g, "-").replace(/\s+/g, " ").trim();
     if (!x) return null;
@@ -274,26 +323,30 @@
     const existing = new Set(records.map((r) => r.id));
     const seen = new Set();
     impRows = $("imp-text").value.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((line) => {
-      const parts = line.split(/\t|,/).map((x) => x.trim());
+      const pp = pullPin(line);
+      const parts = pp.rest.split(/\t|,/).map((x) => x.trim()).filter((x, i) => i < 3 || x);
       const [name, trade, number, ...rest] = parts;
       const phone = cleanPhone(number);
       const tid = matchTrade(trade);
-      const area = matchArea(rest.join(" "));
+      const areaTxt = rest.join(" ").replace(/\s+/g, " ").trim();
+      let area = null;
+      if (pp.pin) area = { lat: pp.pin.lat, lng: pp.pin.lng, label: (areaTxt || "Pinned location").slice(0, 40), pinned: true };
+      else area = matchArea(areaTxt);
       let state = "ok", why = "";
       if (!phone) { state = "bad"; why = "Number not valid"; }
       else if (existing.has(phone)) { state = "skip"; why = "Already in database - skipped"; }
       else if (seen.has(phone)) { state = "skip"; why = "Repeated in list - skipped"; }
       else if (!tid) { state = "bad"; why = "Trade not recognised"; }
-      else if (!area) { state = "bad"; why = "Area not recognised"; }
+      else if (!area) { state = "bad"; why = pp.note || "Area not recognised - add a Google Maps link or lat, lng"; }
       if (phone) seen.add(phone);
-      return { name: name || "", phone, tid, area, areaText: rest.join(" "), tradeText: trade, state, why };
+      return { name: name || "", phone, tid, area, areaText: areaTxt, tradeText: trade, state, why };
     });
     const ok = impRows.filter((r) => r.state === "ok");
     const sk = impRows.filter((r) => r.state === "skip").length;
     const bd = impRows.filter((r) => r.state === "bad").length;
     $("imp-result").innerHTML = impRows.length ? `<p style="font-size:13px;font-weight:600;margin:10px 0 6px">${ok.length} will be added · ${sk} skipped · ${bd} need fixing</p>
       <table class="pv"><thead><tr><th>Technician</th><th>Trade · Area</th><th>Result</th></tr></thead><tbody>${impRows.map((r) =>
-      `<tr><td><div class="nm">${esc(r.name) || "<span class='muted'>(blank)</span>"}</div><div class="ph">${esc(r.phone || "")}</div></td><td>${esc(r.tradeText)}<div class="tr">${esc(r.area ? r.area.label : r.areaText)}</div></td><td class="${r.state === "ok" ? "good" : r.state === "skip" ? "skip" : "bad"}">${r.state === "ok" ? "✓ OK" : esc(r.why)}</td></tr>`).join("")}</tbody></table>
+      `<tr><td><div class="nm">${esc(r.name) || "<span class='muted'>(blank)</span>"}</div><div class="ph">${esc(r.phone || "")}</div></td><td>${esc(r.tradeText)}<div class="tr">${esc(r.area ? r.area.label : r.areaText)}${r.area && r.area.pinned ? " 📍 " + r.area.lat.toFixed(4) + ", " + r.area.lng.toFixed(4) : ""}</div></td><td class="${r.state === "ok" ? "good" : r.state === "skip" ? "skip" : "bad"}">${r.state === "ok" ? "✓ OK" : esc(r.why)}</td></tr>`).join("")}</tbody></table>
       ${bd ? '<p class="muted">Rows that need fixing are NOT added. Correct them in the box and tap Check list again.</p>' : ""}` : "";
     $("imp-add").textContent = `Add ${ok.length} technician${ok.length === 1 ? "" : "s"}`;
     $("imp-add").disabled = ok.length === 0;
