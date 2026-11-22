@@ -99,6 +99,7 @@
       <option value="trialrunning">Trial running</option>
       <option value="paid">Paid</option>
       <option value="hidden">Hidden</option>
+      <option value="activetoday">Active today (latest first)</option>
       <option value="gotenq">Got enquiries (latest first)</option>
       <option value="notjoined">Added by me · not joined yet</option>
       <option value="all">All</option>
@@ -186,6 +187,9 @@
     const d = Math.floor(h / 24);
     return d + " day" + (d === 1 ? "" : "s") + " ago";
   }
+  function startOfTodayIST() { const n = Date.now() + 19800000; return n - (n % 86400000) - 19800000; }
+  function activeToday(r) { return ms(r.updatedAt) >= startOfTodayIST(); }
+  function liveNow(r) { return r.online === true && Date.now() - ms(r.updatedAt) <= 10 * 60 * 1000; }
   function notJoined(r) { return r.imported === true && !ms(r.updatedAt); }
   function leadsText(r) {
     const n = r.leadCount || 0;
@@ -394,10 +398,12 @@
       if (f === "verified" && r.verified !== true) return false;
       if (f === "unverified" && r.verified === true) return false;
       if (f === "notjoined" && !notJoined(r)) return false;
+      if (f === "activetoday" && !activeToday(r)) return false;
       if (f === "gotenq" && !((r.leadCount || 0) > 0)) return false;
       if (["followup", "trialover", "trialrunning", "paid", "hidden"].includes(f) && statusOf(r).key !== f) return false;
       return !q || (r.name || "").toLowerCase().includes(q) || r.id.includes(q);
     });
+    if (f === "activetoday") list.sort((x, y) => ms(y.updatedAt) - ms(x.updatedAt));
     if (f === "gotenq") list.sort((x, y) => (ms(y.lastLeadAt) - ms(x.lastLeadAt)) || ((y.leadCount || 0) - (x.leadCount || 0)));
     if (!list.length) {
       $("rows").innerHTML = `<tr><td colspan="4" class="muted">No records here.</td></tr>`;
@@ -412,7 +418,7 @@
           <td><div class="nm">${esc(r.name) || "<span class='muted'>(no name)</span>"}</div>
               <div class="ph">${esc(r.id)}</div>
               <div class="tr">${esc((r.trades || []).map(tradeLabel).join(", "))}</div>
-              <div class="ld">${leadsText(r)}</div>${ms(r.lastLeadAt) ? '<div class="tr" style="color:#1F6B42;font-weight:600">Last enquiry ' + ago(ms(r.lastLeadAt)) + '</div>' : ""}${notJoined(r) ? '<div class="tr">Added by you · ' + esc(r.area || "") + '</div>' : ""}</td>
+              <div class="ld">${leadsText(r)}</div>${activeToday(r) ? '<div class="tr" style="color:#1F6B42;font-weight:600">' + (liveNow(r) ? "Online now" : "Active " + ago(ms(r.updatedAt))) + '</div>' : ""}${ms(r.lastLeadAt) ? '<div class="tr" style="color:#1F6B42;font-weight:600">Last enquiry ' + ago(ms(r.lastLeadAt)) + '</div>' : ""}${notJoined(r) ? '<div class="tr">Added by you · ' + esc(r.area || "") + '</div>' : ""}</td>
           <td>${(() => { const st = statusOf(r); return `<span class="chipf ${st.cls}">${st.label}</span><div class="tr">${esc(st.extra)}</div>`; })()}
               <div style="margin-top:4px"><span class="badge ${r.verified === true ? "b-yes" : "b-no"}">${r.verified === true ? "Verified" : "Unverified"}</span></div></td>
           <td><a class="wa" href="${IS_MOBILE ? "whatsapp://send?phone=" + esc(wa) + waQ : "https://wa.me/" + esc(wa) + waQ}"${IS_MOBILE ? "" : ' target="_blank" rel="noopener"'}>WhatsApp</a></td>
@@ -485,7 +491,7 @@
       setStatus(`Loaded ${records.length} record(s).`, "ok");
       const nf = records.filter((r) => statusOf(r).key === "followup").length;
       const nu = records.filter((r) => r.verified !== true).length;
-      $("summary").textContent = `Needs follow-up: ${nf} · Unverified: ${nu}`;
+      $("summary").textContent = `🟢 Online now: ${records.filter(liveNow).length} · 📅 Active today: ${records.filter(activeToday).length}  |  Needs follow-up: ${nf} · Unverified: ${nu}`;
       render();
     } catch (e) {
       setStatus("⚠ Couldn't load: " + e.message, "err");
