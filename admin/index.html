@@ -64,7 +64,7 @@
   <div class="row" style="margin:0"><input type="text" id="ct-phone" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" style="flex:1 1 60%" /><button class="b-main" id="ct-find" type="button">Find</button></div>
   <div id="ct-found" style="display:none">
     <div style="background:#F6F4EF;border-radius:8px;padding:10px;margin:10px 0"><div class="nm" id="ct-name"></div><div class="tr" id="ct-cur" style="font-size:12.5px;color:#1C2541"></div></div>
-    <div class="grid2" style="margin-bottom:8px"><button class="b-main" id="ct-m-change" type="button">Change a trade</button><button class="b-ghost" id="ct-m-remove" type="button">Remove one trade</button></div>
+    <div class="grid2" style="margin-bottom:8px;grid-template-columns:1fr 1fr 1fr;gap:6px"><button class="b-main" id="ct-m-add" type="button">Add a trade</button><button class="b-ghost" id="ct-m-change" type="button">Change a trade</button><button class="b-ghost" id="ct-m-remove" type="button">Remove one trade</button></div>
     <div id="ct-oldwrap"><label id="ct-oldlbl">Which trade?</label><select id="ct-old"></select></div>
     <div id="ct-newwrap"><label>New trade</label><select id="ct-new"></select></div>
   </div>
@@ -437,12 +437,15 @@
   function ctSetMode(m) {
     ctMode = m;
     const cur = (ctRec.trades || []).filter(Boolean);
+    $("ct-m-add").className = m === "add" ? "b-main" : "b-ghost";
     $("ct-m-change").className = m === "change" ? "b-main" : "b-ghost";
     $("ct-m-remove").className = m === "remove" ? "b-main" : "b-ghost";
-    $("ct-newwrap").style.display = m === "change" ? "block" : "none";
+    $("ct-newwrap").style.display = m === "remove" ? "none" : "block";
+    $("ct-newwrap").querySelector("label").textContent = m === "add" ? "Trade to add" : "New trade";
     $("ct-oldlbl").textContent = m === "change" ? "Which trade to replace?" : "Which trade to remove?";
-    $("ct-oldwrap").style.display = cur.length > 1 || m === "change" ? "block" : "none";
-    if (m === "remove" && cur.length < 2) { $("ct-msg").textContent = "He has only one trade - it can't be removed. Use 'Change a trade' instead."; $("ct-save").disabled = true; }
+    $("ct-oldwrap").style.display = m === "add" ? "none" : (cur.length > 1 || m === "change" ? "block" : "none");
+    if (m === "add" && cur.length >= 2) { $("ct-msg").textContent = "He already has two trades (the maximum). Use 'Change a trade' to swap one."; $("ct-save").disabled = true; }
+    else if (m === "remove" && cur.length < 2) { $("ct-msg").textContent = "He has only one trade - it can't be removed. Use 'Change a trade' instead."; $("ct-save").disabled = true; }
     else { $("ct-msg").textContent = ""; $("ct-save").disabled = false; }
   }
   $("btn-chgtrade").addEventListener("click", () => {
@@ -459,8 +462,9 @@
     $("ct-old").innerHTML = optHtml(cur);
     $("ct-new").innerHTML = optHtml(Object.keys(TRADE_LABELS).filter((id) => !cur.includes(id)));
     $("ct-found").style.display = "block";
-    ctSetMode("change");
+    ctSetMode(cur.length < 2 ? "add" : "change");
   });
+  $("ct-m-add").addEventListener("click", () => ctRec && ctSetMode("add"));
   $("ct-m-change").addEventListener("click", () => ctRec && ctSetMode("change"));
   $("ct-m-remove").addEventListener("click", () => ctRec && ctSetMode("remove"));
   $("ct-cancel").addEventListener("click", () => { $("ct-modal").style.display = "none"; });
@@ -469,7 +473,8 @@
     const cur = (ctRec.trades || []).filter(Boolean);
     const oldId = $("ct-old").value, newId = $("ct-new").value;
     let next;
-    if (ctMode === "remove") { if (cur.length < 2) return; next = cur.filter((t) => t !== oldId); }
+    if (ctMode === "add") { if (!newId || cur.length >= 2 || cur.includes(newId)) return; next = [...cur, newId]; }
+    else if (ctMode === "remove") { if (cur.length < 2) return; next = cur.filter((t) => t !== oldId); }
     else { if (!newId) return; next = cur.length ? cur.map((t) => (t === oldId ? newId : t)) : [newId]; }
     $("ct-save").disabled = true; $("ct-msg").textContent = "Saving…";
     try {
