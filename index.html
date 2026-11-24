@@ -380,63 +380,64 @@
   <header style="display:flex; align-items:center; justify-content:space-between;">
     <div>
       <h1>KAARIGAR</h1>
-      <p>TECHNICIAN · LIVE GPS</p>
+      <p>कारीगर · लाइव GPS</p>
     </div>
     <button id="btn-switch-role-tech" style="background:rgba(246,244,239,0.14); border:none; color:#F6F4EF; font-size:10px; padding:6px 12px; border-radius:18px; font-family:'JetBrains Mono',monospace; cursor:pointer; line-height:1.25; text-align:center;">SWITCH ROLE<br><span style="font-family:system-ui,sans-serif; font-size:9px; font-weight:700; color:#FFC857;">ग्राहक ↔ कारीगर</span></button>
   </header>
   <main>
-    <div id="tech-loading" style="padding:30px 0; text-align:center; color:#8891A0; font-family:'JetBrains Mono',monospace; font-size:13px;">Loading your profile…</div>
+    <div id="tech-loading" style="padding:30px 0; text-align:center; color:#8891A0; font-family:'JetBrains Mono',monospace; font-size:13px;">आपकी प्रोफ़ाइल लोड हो रही है…</div>
 
     <div id="tech-registration" style="display:none">
     <div class="explain-btn-row">
       <button type="button" class="explain-btn" id="btn-open-explainer"><span class="msr">play_circle</span> ऐप समझिए</button>
     </div>
-    <h2>Your status</h2>
-    <p class="sub">Going online shares your live location with nearby users.</p>
+    <h2>आपकी स्थिति</h2>
+    <p class="sub">ऑनलाइन होने पर आपकी लाइव लोकेशन आस-पास के ग्राहकों को दिखती है।</p>
 
-    <label for="name">Your name</label>
-    <input type="text" id="name" placeholder="e.g. Ramesh Yadav" />
+    <label for="name">आपका नाम</label>
+    <input type="text" id="name" placeholder="जैसे: रमेश यादव" />
 
-    <label for="phone">Phone number (users will call this)</label>
-    <input type="tel" id="phone" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric" pattern="[0-9]*" />
-    <p class="hint" id="phone-length-error" style="display:none; color:#C7401E; font-weight:600;">⚠ Please enter a valid 10-digit mobile number.</p>
+    <label for="phone">फ़ोन नंबर (ग्राहक इसी पर कॉल करेंगे)</label>
+    <input type="tel" id="phone" placeholder="10 अंकों का मोबाइल नंबर" maxlength="10" inputmode="numeric" pattern="[0-9]*" />
+    <p class="hint" id="phone-length-error" style="display:none; color:#C7401E; font-weight:600;">⚠ कृपया 10 अंकों का सही मोबाइल नंबर डालें।</p>
 
-    <label for="phone-confirm">Re-enter mobile number</label>
-    <input type="tel" id="phone-confirm" placeholder="Type your number again" maxlength="10" inputmode="numeric" pattern="[0-9]*" />
-    <p class="hint" id="phone-match-error" style="display:none; color:#C7401E; font-weight:600;">⚠ The two numbers don't match. Please type your number again.</p>
+    <label for="phone-confirm">मोबाइल नंबर दोबारा डालें</label>
+    <input type="tel" id="phone-confirm" placeholder="अपना नंबर फिर से लिखें" maxlength="10" inputmode="numeric" pattern="[0-9]*" />
+    <p class="hint" id="phone-match-error" style="display:none; color:#C7401E; font-weight:600;">⚠ दोनों नंबर अलग हैं। कृपया अपना नंबर ध्यान से दोबारा लिखें।</p>
+    <p class="hint" id="phone-match-ok" style="display:none; color:#1E8A52; font-weight:700; align-items:center; gap:8px;"><span class="msr" style="font-size:22px">check_circle</span> नंबर सही है</p>
 
-    <label style="margin-top:6px">Your trades (choose up to 2)</label>
+    <label style="margin-top:6px">आपका काम (ज़्यादा से ज़्यादा 2 चुनें)</label>
     <div class="trades" id="trades">
-      <button type="button" class="trade-chip" data-trade="plumbing" style="--accent:#2F6FA8"><span class="msr">plumbing</span> Plumber</button>
-      <button type="button" class="trade-chip" data-trade="electrical" style="--accent:#C77D1E"><span class="msr">bolt</span> Electrician</button>
-      <button type="button" class="trade-chip" data-trade="carpentry" style="--accent:#8B5E3C"><span class="msr">handyman</span> Carpenter</button>
-      <button type="button" class="trade-chip" data-trade="ac_technician" style="--accent:#2E9BB0"><span class="msr">ac_unit</span> AC Technician</button>
-      <button type="button" class="trade-chip" data-trade="ro_water" style="--accent:#1E88A8"><span class="msr">water_drop</span> RO / Water Purifier</button>
-      <button type="button" class="trade-chip" data-trade="washing_machine" style="--accent:#6B5CA5"><span class="msr">local_laundry_service</span> Washing Machine</button>
-      <button type="button" class="trade-chip" data-trade="refrigerator" style="--accent:#2E8B57"><span class="msr">kitchen</span> Refrigerator</button>
-      <button type="button" class="trade-chip" data-trade="tv_repair" style="--accent:#4A4A68"><span class="msr">tv</span> TV Repairing</button>
-      <button type="button" class="trade-chip" data-trade="home_cleaning" style="--accent:#3FA796"><span class="msr">cleaning_services</span> Home Cleaning</button>
-      <button type="button" class="trade-chip" data-trade="pest_control" style="--accent:#7A8B3C"><span class="msr">pest_control</span> Pest Control</button>
-      <button type="button" class="trade-chip" data-trade="window_sliding" style="--accent:#5C7A9E"><span class="msr">blinds</span> Window Sliding</button>
-      <button type="button" class="trade-chip" data-trade="fabrication" style="--accent:#7A5C3C"><span class="msr">precision_manufacturing</span> Fabrication</button>
-      <button type="button" class="trade-chip" data-trade="pooja_pandit" style="--accent:#B8722E"><span class="msr">temple_hindu</span> Pooja Pandit</button>
-      <button type="button" class="trade-chip" data-trade="computer_repair" style="--accent:#45577A"><span class="msr">computer</span> Computer Repair</button>
-      <button type="button" class="trade-chip" data-trade="painter" style="--accent:#C15A4E"><span class="msr">format_paint</span> Painter</button>
-      <button type="button" class="trade-chip" data-trade="marriage_photography" style="--accent:#A34D77"><span class="msr">photo_camera</span> Photography</button>
-      <button type="button" class="trade-chip" data-trade="key_maker" style="--accent:#9C7A2E"><span class="msr">key</span> Key Maker</button>
-      <button type="button" class="trade-chip" data-trade="water_supplier" style="--accent:#2E7FA6"><span class="msr">local_shipping</span> Water Supplier</button>
-      <button type="button" class="trade-chip" data-trade="kabadi_wala" style="--accent:#6B8E4E"><span class="msr">recycling</span> Kabadi Wala</button>
-      <button type="button" class="trade-chip" data-trade="kadiya_mason" style="--accent:#A0522D"><span class="msr">construction</span> Kadiya - Mason</button>
-      <button type="button" class="trade-chip" data-trade="vastu_consultant" style="--accent:#1B5E3F"><span class="msr">explore</span> Vastu Consultant</button>
-      <button type="button" class="trade-chip" data-trade="interior_decorator" style="--accent:#A6597B"><span class="msr">design_services</span> Interior Decorator</button>
-      <button type="button" class="trade-chip" data-trade="upholstery_repair" style="--accent:#8B4049"><span class="msr">chair</span> Upholstery (Sofa/Chair) Repairing</button>
-      <button type="button" class="trade-chip" data-trade="inverter_battery" style="--accent:#2F5DA8"><span class="msr">battery_charging_full</span> Inverter &amp; Battery</button>
-      <button type="button" class="trade-chip" data-trade="garden_care" style="--accent:#3E8E41"><span class="msr">yard</span> Trimming &amp; Watering - Home Garden</button>
-      <button type="button" class="trade-chip" data-trade="private_chef" style="--accent:#E8761B"><span class="msr">skillet</span> Private Chef - External Home Cook</button>
-      <button type="button" class="trade-chip" data-trade="trip_driver" style="--accent:#2B3B7A"><span class="msr">local_taxi</span> Trip Base Driver - Chauffeur</button>
-      <button type="button" class="trade-chip" data-trade="post_pregnancy_massage" style="--accent:#D6457A"><span class="msr">spa</span> Post Pregnancy Massage</button>
+      <button type="button" class="trade-chip" data-trade="plumbing" style="--accent:#2F6FA8"><span class="msr">plumbing</span> प्लंबर</button>
+      <button type="button" class="trade-chip" data-trade="electrical" style="--accent:#C77D1E"><span class="msr">bolt</span> इलेक्ट्रीशियन</button>
+      <button type="button" class="trade-chip" data-trade="carpentry" style="--accent:#8B5E3C"><span class="msr">handyman</span> बढ़ई</button>
+      <button type="button" class="trade-chip" data-trade="ac_technician" style="--accent:#2E9BB0"><span class="msr">ac_unit</span> AC टेक्नीशियन</button>
+      <button type="button" class="trade-chip" data-trade="ro_water" style="--accent:#1E88A8"><span class="msr">water_drop</span> RO / वॉटर प्यूरीफायर</button>
+      <button type="button" class="trade-chip" data-trade="washing_machine" style="--accent:#6B5CA5"><span class="msr">local_laundry_service</span> वॉशिंग मशीन</button>
+      <button type="button" class="trade-chip" data-trade="refrigerator" style="--accent:#2E8B57"><span class="msr">kitchen</span> फ्रिज</button>
+      <button type="button" class="trade-chip" data-trade="tv_repair" style="--accent:#4A4A68"><span class="msr">tv</span> TV रिपेयरिंग</button>
+      <button type="button" class="trade-chip" data-trade="home_cleaning" style="--accent:#3FA796"><span class="msr">cleaning_services</span> घर की सफाई</button>
+      <button type="button" class="trade-chip" data-trade="pest_control" style="--accent:#7A8B3C"><span class="msr">pest_control</span> पेस्ट कंट्रोल</button>
+      <button type="button" class="trade-chip" data-trade="window_sliding" style="--accent:#5C7A9E"><span class="msr">blinds</span> विंडो स्लाइडिंग</button>
+      <button type="button" class="trade-chip" data-trade="fabrication" style="--accent:#7A5C3C"><span class="msr">precision_manufacturing</span> फेब्रिकेशन</button>
+      <button type="button" class="trade-chip" data-trade="pooja_pandit" style="--accent:#B8722E"><span class="msr">temple_hindu</span> पूजा पंडित</button>
+      <button type="button" class="trade-chip" data-trade="computer_repair" style="--accent:#45577A"><span class="msr">computer</span> कंप्यूटर रिपेयर</button>
+      <button type="button" class="trade-chip" data-trade="painter" style="--accent:#C15A4E"><span class="msr">format_paint</span> पेंटर</button>
+      <button type="button" class="trade-chip" data-trade="marriage_photography" style="--accent:#A34D77"><span class="msr">photo_camera</span> फोटोग्राफी</button>
+      <button type="button" class="trade-chip" data-trade="key_maker" style="--accent:#9C7A2E"><span class="msr">key</span> चाबी बनाने वाला</button>
+      <button type="button" class="trade-chip" data-trade="water_supplier" style="--accent:#2E7FA6"><span class="msr">local_shipping</span> पानी सप्लायर</button>
+      <button type="button" class="trade-chip" data-trade="kabadi_wala" style="--accent:#6B8E4E"><span class="msr">recycling</span> कबाड़ी वाला</button>
+      <button type="button" class="trade-chip" data-trade="kadiya_mason" style="--accent:#A0522D"><span class="msr">construction</span> कडिया – राजमिस्त्री</button>
+      <button type="button" class="trade-chip" data-trade="vastu_consultant" style="--accent:#1B5E3F"><span class="msr">explore</span> वास्तु सलाहकार</button>
+      <button type="button" class="trade-chip" data-trade="interior_decorator" style="--accent:#A6597B"><span class="msr">design_services</span> इंटीरियर डेकोरेटर</button>
+      <button type="button" class="trade-chip" data-trade="upholstery_repair" style="--accent:#8B4049"><span class="msr">chair</span> सोफा / कुर्सी रिपेयर</button>
+      <button type="button" class="trade-chip" data-trade="inverter_battery" style="--accent:#2F5DA8"><span class="msr">battery_charging_full</span> इन्वर्टर और बैटरी</button>
+      <button type="button" class="trade-chip" data-trade="garden_care" style="--accent:#3E8E41"><span class="msr">yard</span> बगीचे की कटाई और सिंचाई</button>
+      <button type="button" class="trade-chip" data-trade="private_chef" style="--accent:#E8761B"><span class="msr">skillet</span> प्राइवेट शेफ – घर पर खाना बनाने वाला</button>
+      <button type="button" class="trade-chip" data-trade="trip_driver" style="--accent:#2B3B7A"><span class="msr">local_taxi</span> ट्रिप ड्राइवर – चालक</button>
+      <button type="button" class="trade-chip" data-trade="post_pregnancy_massage" style="--accent:#D6457A"><span class="msr">spa</span> डिलीवरी के बाद मालिश</button>
     </div>
-    <p class="hint" id="trade-hint">0 / 2 selected</p>
+    <p class="hint" id="trade-hint">0 / 2 चुने गए</p>
     <p class="hint" id="trade-confirm-text" style="display:none; color:#1C2541; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; margin-top:6px;"></p>
     <div id="verify-slot-reg" style="display:none; margin-top:14px;"></div>
     </div>
@@ -446,8 +447,8 @@
       <div class="explain-btn-row">
         <button type="button" class="explain-btn" id="btn-open-explainer-2"><span class="msr">play_circle</span> ऐप समझिए</button>
       </div>
-      <h2>Your status</h2>
-      <p class="sub">Going online shares your live location with nearby users.</p>
+      <h2>आपकी स्थिति</h2>
+      <p class="sub">ऑनलाइन होने पर आपकी लाइव लोकेशन आस-पास के ग्राहकों को दिखती है।</p>
       <div style="background:#FBFAF6; border-radius:10px; padding:16px; box-shadow:0 1px 3px rgba(28,37,65,0.08); margin-bottom:16px;">
         <div style="font-weight:700; font-size:17px; color:#1C2541" id="summary-name"></div>
         <div style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#8891A0; margin-top:2px" id="summary-phone"></div>
@@ -455,52 +456,52 @@
       </div>
       <div id="verify-slot-summary"></div>
       <button id="btn-add-service" class="link-btn" style="display:flex; align-items:center; gap:6px; background:#FBFAF6; border:1px dashed rgba(28,37,65,0.25); border-radius:8px; padding:12px; width:100%; justify-content:center; text-decoration:none; color:#1C2541; font-weight:600; margin-bottom:18px; cursor:pointer;">
-        <span class="msr" style="font-size:16px">add_circle</span> Add Service
+        <span class="msr" style="font-size:16px">add_circle</span> Add Service · सेवा जोड़ें
       </button>
     </div>
 
     <!-- ADD SERVICE (pick one more trade, up to the 2-service limit) -->
     <div id="tech-addservice" style="display:none">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-        <button class="back-btn" id="btn-addservice-back" style="display:flex; align-items:center; gap:4px; background:none; border:none; color:#1C2541; font-size:14px; padding:0; margin-bottom:0; cursor:pointer;"><span class="msr" style="font-size:16px">arrow_back</span> Back</button>
+        <button class="back-btn" id="btn-addservice-back" style="display:flex; align-items:center; gap:4px; background:none; border:none; color:#1C2541; font-size:14px; padding:0; margin-bottom:0; cursor:pointer;"><span class="msr" style="font-size:16px">arrow_back</span> वापस</button>
         <button type="button" class="explain-btn" id="btn-open-explainer-3"><span class="msr">play_circle</span> ऐप समझिए</button>
       </div>
-      <h2>Add a service</h2>
-      <p class="sub">Pick one more trade to offer alongside your current one.</p>
+      <h2>सेवा जोड़ें</h2>
+      <p class="sub">अपने मौजूदा काम के साथ एक और काम चुनें।</p>
       <div style="background:#FBFAF6; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:#8891A0;">
         <span id="addservice-name" style="color:#1C2541; font-weight:600"></span> · <span id="addservice-phone" style="font-family:'JetBrains Mono',monospace"></span>
       </div>
       <div class="trades" id="addservice-trades"></div>
       <div style="height:16px"></div>
-      <button id="btn-addservice-confirm" disabled style="width:100%; padding:15px; border:none; border-radius:10px; font-size:15px; font-weight:700; color:#1C2541; background:#F2A93B; cursor:pointer; font-family:'Inter',sans-serif;">Confirm</button>
+      <button id="btn-addservice-confirm" disabled style="width:100%; padding:15px; border:none; border-radius:10px; font-size:15px; font-weight:700; color:#1C2541; background:#F2A93B; cursor:pointer; font-family:'Inter',sans-serif;">Confirm · पक्का करें</button>
     </div>
 
     <p class="hint" id="trial-status" style="margin-bottom:8px"></p>
     <div style="height:8px"></div>
-    <button id="btn-toggle" style="display:none">Go Online</button>
-    <p class="hint" id="hint">Add your name, phone, and at least one trade first.</p>
+    <button id="btn-toggle" style="display:none">Go Online<span style="display:block; font-size:12.5px; font-weight:600; margin-top:2px">ऑनलाइन हों</span></button>
+    <p class="hint" id="hint">पहले अपना नाम, फ़ोन नंबर और कम से कम एक काम चुनें।</p>
 
     <div class="status-box" id="status"></div>
 
     <!-- PAYWALL (shown when free trial has ended) -->
     <div id="paywall" style="display:none; margin-top:18px; padding:18px; border-radius:10px; background:#FBFAF6; border:1px solid rgba(199,125,30,0.35);">
-      <h2 style="font-size:19px; margin:0 0 6px">Your free trial has ended</h2>
+      <h2 style="font-size:19px; margin:0 0 6px">आपका फ्री ट्रायल पूरा हो गया है</h2>
       <!-- WEB version (browser): price + UPI payment -->
       <div id="paywall-web">
-      <p class="sub" style="margin-bottom:14px">You've received 10 enquiries and your free trial is over. Continue getting matched with nearby users for just:</p>
+      <p class="sub" style="margin-bottom:14px">आपको 10 पूछताछ मिल चुकी हैं और फ्री ट्रायल खत्म हो गया है। पास के ग्राहकों से जुड़े रहने के लिए सिर्फ़:</p>
       <p style="font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:26px; color:#1C2541; margin:0 0 14px">
-        ₹<span id="paywall-price"></span> <span style="font-size:14px; color:#8891A0; font-weight:600">/ <span id="paywall-months"></span> months</span>
+        ₹<span id="paywall-price"></span> <span style="font-size:14px; color:#8891A0; font-weight:600">/ <span id="paywall-months"></span> महीने</span>
       </p>
-      <button id="btn-accept" class="primary-btn" style="width:100%; padding:15px; border:none; border-radius:10px; font-size:15px; font-weight:700; color:#1C2541; background:#F2A93B; cursor:pointer; font-family:'Inter',sans-serif; margin-bottom:10px;">Accept &amp; Pay</button>
-      <button id="btn-decline" class="link-btn" style="display:block; width:100%; text-align:center; background:none; border:none; color:#8891A0; font-size:13px; text-decoration:underline; cursor:pointer; font-family:'Inter',sans-serif;">Decline for now</button>
-      <p class="hint" style="margin-top:10px">Tap Accept to pay via Google Pay / any UPI app. You'll be verified and back online within 24 hours.</p>
+      <button id="btn-accept" class="primary-btn" style="width:100%; padding:15px; border:none; border-radius:10px; font-size:15px; font-weight:700; color:#1C2541; background:#F2A93B; cursor:pointer; font-family:'Inter',sans-serif; margin-bottom:10px;">स्वीकार करें और भुगतान करें</button>
+      <button id="btn-decline" class="link-btn" style="display:block; width:100%; text-align:center; background:none; border:none; color:#8891A0; font-size:13px; text-decoration:underline; cursor:pointer; font-family:'Inter',sans-serif;">अभी नहीं</button>
+      <p class="hint" style="margin-top:10px">Google Pay / किसी भी UPI ऐप से भुगतान करने के लिए स्वीकार करें दबाएँ। 24 घंटे के अंदर आपको वेरिफाई करके वापस ऑनलाइन कर दिया जाएगा।</p>
       </div>
       <!-- PLAY APP version: no price, no payment, support contact only -->
       <div id="paywall-play" style="display:none">
-      <p class="sub" style="margin-bottom:14px">You've received 10 enquiries and your free trial is over. To keep receiving leads, please contact Abode Digital Technology support.</p>
-      <button id="btn-support" class="primary-btn" style="width:100%; padding:15px; border:none; border-radius:10px; font-size:15px; font-weight:700; color:#fff; background:#25a244; cursor:pointer; font-family:'Inter',sans-serif; margin-bottom:10px;">Contact support on WhatsApp</button>
-      <button id="btn-play-ok" class="link-btn" style="display:block; width:100%; text-align:center; background:none; border:none; color:#8891A0; font-size:13px; text-decoration:underline; cursor:pointer; font-family:'Inter',sans-serif;">OK</button>
-      <p class="hint" style="margin-top:10px">Support will help you continue. We'll get you back online soon.</p>
+      <p class="sub" style="margin-bottom:14px">आपको 10 पूछताछ मिल चुकी हैं और फ्री ट्रायल खत्म हो गया है। आगे ग्राहक पाने के लिए कृपया Abode Digital Technology सपोर्ट से संपर्क करें।</p>
+      <button id="btn-support" class="primary-btn" style="width:100%; padding:15px; border:none; border-radius:10px; font-size:15px; font-weight:700; color:#fff; background:#25a244; cursor:pointer; font-family:'Inter',sans-serif; margin-bottom:10px;">WhatsApp पर सपोर्ट से संपर्क करें</button>
+      <button id="btn-play-ok" class="link-btn" style="display:block; width:100%; text-align:center; background:none; border:none; color:#8891A0; font-size:13px; text-decoration:underline; cursor:pointer; font-family:'Inter',sans-serif;">ठीक है</button>
+      <p class="hint" style="margin-top:10px">सपोर्ट आपकी मदद करेगा। हम आपको जल्दी ही वापस ऑनलाइन कर देंगे।</p>
       </div>
     </div>
   </main>
@@ -1051,6 +1052,9 @@ function initTechApp() {
   document.getElementById("paywall-price").textContent = SUBSCRIPTION_PRICE;
   document.getElementById("paywall-months").textContent = SUBSCRIPTION_MONTHS;
 
+  const TRADE_HI = {"plumbing": "प्लंबर", "electrical": "इलेक्ट्रीशियन", "carpentry": "बढ़ई", "ac_technician": "AC टेक्नीशियन", "ro_water": "RO / वॉटर प्यूरीफायर", "washing_machine": "वॉशिंग मशीन", "refrigerator": "फ्रिज", "tv_repair": "TV रिपेयरिंग", "home_cleaning": "घर की सफाई", "pest_control": "पेस्ट कंट्रोल", "window_sliding": "विंडो स्लाइडिंग", "fabrication": "फेब्रिकेशन", "pooja_pandit": "पूजा पंडित", "computer_repair": "कंप्यूटर रिपेयर", "painter": "पेंटर", "marriage_photography": "फोटोग्राफी", "key_maker": "चाबी बनाने वाला", "water_supplier": "पानी सप्लायर", "kabadi_wala": "कबाड़ी वाला", "kadiya_mason": "कडिया – राजमिस्त्री", "vastu_consultant": "वास्तु सलाहकार", "interior_decorator": "इंटीरियर डेकोरेटर", "upholstery_repair": "सोफा / कुर्सी रिपेयर", "inverter_battery": "इन्वर्टर और बैटरी", "garden_care": "बगीचे की कटाई और सिंचाई", "private_chef": "प्राइवेट शेफ – घर पर खाना बनाने वाला", "trip_driver": "ट्रिप ड्राइवर – चालक", "post_pregnancy_massage": "डिलीवरी के बाद मालिश"};
+  function hiLabel(id) { return TRADE_HI[id] || ((TRADES_META[id] || { label: id }).label); }
+
   const selectedTrades = new Set();
   let online = false;
 
@@ -1074,18 +1078,15 @@ function initTechApp() {
     let html;
     if (techVerified) {
       html = `<div class="verify-card done">
-        <div class="v-title">${VERIFIED_TICK_SVG} Verified</div>
-        <div class="v-title-hi">आपका नंबर वेरिफाई हो चुका है</div>
-        <div class="v-text" style="margin-bottom:0">Customers now see a green tick next to your name.</div>
+        <div class="v-title">${VERIFIED_TICK_SVG} आपका नंबर वेरिफाई हो चुका है</div>
+        <div class="v-text" style="margin-bottom:0">अब ग्राहकों को आपके नाम के साथ हरा टिक दिखेगा।</div>
       </div>`;
     } else {
       html = `<div class="verify-card">
-        <div class="v-title">Verify your number</div>
-        <div class="v-title-hi">अपना नंबर वेरिफाई करें</div>
-        <div class="v-text">Tap the green button, then press <b>Send</b> in WhatsApp. Send it from the same number you registered (<b>${phone || "your number"}</b>). Verified technicians get a green tick.<br/>
-        <span style="color:#5A6072">हरा बटन दबाएँ, फिर WhatsApp में <b>Send</b> दबाएँ. वही नंबर इस्तेमाल करें जो आपने रजिस्टर किया है.</span></div>
+        <div class="v-title">अपना नंबर वेरिफाई करें</div>
+        <div class="v-text">हरा बटन दबाएँ, फिर WhatsApp में <b>Send</b> दबाएँ। वही नंबर इस्तेमाल करें जो आपने रजिस्टर किया है (<b>${phone || "आपका नंबर"}</b>)। वेरिफाई हुए कारीगरों के नाम के साथ हरा टिक दिखता है।</div>
         <a class="verify-wa-btn" id="btn-verify-wa" href="${verifyWhatsAppLink()}" target="_blank" rel="noopener">${WA_ICON_SVG} WhatsApp पर वेरिफाई करें</a>
-        ${requested ? '<div class="v-wait">⏳ Request sent — we will verify you soon.</div>' : ""}
+        ${requested ? '<div class="v-wait">⏳ रिक्वेस्ट भेज दी गई है — हम जल्दी ही आपको वेरिफाई करेंगे।</div>' : ""}
       </div>`;
     }
     const sumSlot = document.getElementById("verify-slot-summary");
@@ -1115,6 +1116,12 @@ function initTechApp() {
   const phoneConfirmEl = document.getElementById("phone-confirm");
   const phoneMatchErrorEl = document.getElementById("phone-match-error");
   const phoneLengthErrorEl = document.getElementById("phone-length-error");
+  const phoneMatchOkEl = document.getElementById("phone-match-ok");
+  function setMatchOk(on) {
+    phoneMatchOkEl.style.display = on ? "flex" : "none";
+    phoneConfirmEl.style.borderColor = on ? "#1E8A52" : "";
+    phoneConfirmEl.style.borderWidth = on ? "2px" : "";
+  }
   function phoneDigitsOf(v) { return (v || "").replace(/\D/g, "").slice(0, 10); }
 
   function checkPhoneMatch() {
@@ -1122,10 +1129,12 @@ function initTechApp() {
     const b = phoneDigitsOf(phoneConfirmEl.value);
     if (!b) {
       phoneMatchErrorEl.style.display = "none";
+      setMatchOk(false);
       updateToggleState();
       return;
     }
     if (b.length >= a.length && a !== b) {
+      setMatchOk(false);
       phoneMatchErrorEl.style.display = "block";
       phoneEl.value = "";
       phoneConfirmEl.value = "";
@@ -1133,6 +1142,7 @@ function initTechApp() {
       phoneEl.focus();
     } else {
       phoneMatchErrorEl.style.display = "none";
+      setMatchOk(a.length === 10 && a === b);
     }
     updateToggleState();
   }
@@ -1144,6 +1154,7 @@ function initTechApp() {
     localStorage.setItem("kaarigar_phone", phoneEl.value);
     phoneConfirmEl.value = "";
     phoneMatchErrorEl.style.display = "none";
+    setMatchOk(false);
     updateToggleState();
   });
   phoneConfirmEl.addEventListener("input", () => {
@@ -1169,11 +1180,11 @@ function initTechApp() {
       const atLimit = selectedTrades.size >= MAX_TRADES && !active;
       btn.classList.toggle("disabled", atLimit);
     });
-    tradeHint.textContent = `${selectedTrades.size} / ${MAX_TRADES} selected`;
+    tradeHint.textContent = `${selectedTrades.size} / ${MAX_TRADES} चुने गए`;
     const tradeConfirmEl = document.getElementById("trade-confirm-text");
     if (selectedTrades.size > 0) {
-      const names = Array.from(selectedTrades).map((id) => (TRADES_META[id] || { label: id }).label).join(", ");
-      tradeConfirmEl.textContent = `You have selected: ${names}. Please confirm.`;
+      const names = Array.from(selectedTrades).map((id) => hiLabel(id)).join(", ");
+      tradeConfirmEl.textContent = `आपने चुना है: ${names}। कृपया पक्का करें।`;
       tradeConfirmEl.style.display = "block";
     } else {
       tradeConfirmEl.style.display = "none";
@@ -1188,7 +1199,7 @@ function initTechApp() {
         selectedTrades.delete(t);
       } else {
         if (selectedTrades.size >= MAX_TRADES) {
-          tradeHint.textContent = `You can select up to ${MAX_TRADES} services. Remove one first.`;
+          tradeHint.textContent = `आप ज़्यादा से ज़्यादा ${MAX_TRADES} काम चुन सकते हैं। पहले एक हटाएँ।`;
           tradeHint.style.color = "#C7401E";
           setTimeout(() => { tradeHint.style.color = ""; renderTrades(); }, 1800);
           return;
@@ -1236,7 +1247,7 @@ function initTechApp() {
       const t = TRADES_META[id] || { label: id, icon: "handyman", color: "#1C2541" };
       return `<div style="display:flex; align-items:center; gap:6px; background:${t.color}18; border:1px solid ${t.color}55; padding:6px 10px; border-radius:999px;">
         <span class="msr" style="font-size:15px; color:${t.color}">${t.icon}</span>
-        <span style="font-size:12.5px; font-weight:600; color:#1C2541">${t.label}</span>
+        <span style="font-size:12.5px; font-weight:600; color:#1C2541">${hiLabel(id)}</span>
       </div>`;
     }).join("");
   }
@@ -1268,7 +1279,7 @@ function initTechApp() {
     const available = ALL_TRADE_IDS.filter((id) => !selectedTrades.has(id));
     container.innerHTML = available.map((id) => {
       const t = TRADES_META[id];
-      return `<button type="button" class="trade-chip addservice-chip" data-trade="${id}" style="--accent:${t.color}"><span class="msr">${t.icon}</span> ${t.label}</button>`;
+      return `<button type="button" class="trade-chip addservice-chip" data-trade="${id}" style="--accent:${t.color}"><span class="msr">${t.icon}</span> ${hiLabel(id)}</button>`;
     }).join("");
     container.querySelectorAll(".addservice-chip").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -1304,14 +1315,14 @@ function initTechApp() {
     if (!addServiceChoice || !db) return;
     const btn = document.getElementById("btn-addservice-confirm");
     btn.disabled = true;
-    btn.textContent = "Saving…";
+    btn.textContent = "सेव हो रहा है…";
     selectedTrades.add(addServiceChoice);
     try {
       await fsSetDoc(fsDoc(db, "technicians", techId()), { trades: Array.from(selectedTrades) }, { merge: true });
     } catch (e) {
-      showStatus("err", "⚠ Couldn't save: " + e.message);
+      showStatus("err", "⚠ सेव नहीं हो सका: " + e.message);
     }
-    btn.textContent = "Confirm";
+    btn.textContent = "Confirm · पक्का करें";
     techAddServiceEl.style.display = "none";
     showSummary();
   });
@@ -1368,7 +1379,7 @@ function initTechApp() {
 
       if (isPaidActive) {
         const daysLeft = Math.ceil((paidUntilMs - Date.now()) / 86400000);
-        trialStatusEl.textContent = `✅ Subscribed — active for ${daysLeft} more day${daysLeft === 1 ? "" : "s"}`;
+        trialStatusEl.textContent = `✅ सब्सक्रिप्शन चालू — ${daysLeft} दिन बाकी`;
         trialStatusEl.style.color = "#205e3d";
         return { blocked: false };
       }
@@ -1379,7 +1390,7 @@ function initTechApp() {
       }
 
       trialStatusEl.style.color = "#8891A0";
-      trialStatusEl.textContent = `Free trial — ${leadCount}/${TRIAL_LEAD_THRESHOLD} enquiries`;
+      trialStatusEl.textContent = `फ्री ट्रायल — ${leadCount}/${TRIAL_LEAD_THRESHOLD} पूछताछ`;
       return { blocked: false };
     } catch (e) {
       return { blocked: false };
@@ -1414,7 +1425,7 @@ function initTechApp() {
 
   btnAccept.addEventListener("click", () => {
     if (!UPI_ID || UPI_ID.startsWith("REPLACE_ME")) {
-      showStatus("err", "⚠ Payment UPI ID not set up yet — add it in index.html.");
+      showStatus("err", "⚠ भुगतान का UPI ID अभी सेट नहीं है।");
       return;
     }
     const note = `Kaarigar ${SUBSCRIPTION_MONTHS}-month subscription`;
@@ -1434,15 +1445,15 @@ function initTechApp() {
   });
   document.getElementById("btn-play-ok").addEventListener("click", () => {
     hidePaywall();
-    showStatus("warn", "Your free trial has ended. Contact support to continue.");
+    showStatus("warn", "आपका फ्री ट्रायल खत्म हो गया है। आगे बढ़ने के लिए सपोर्ट से संपर्क करें।");
   });
   btnDecline.addEventListener("click", () => {
     hidePaywall();
-    showStatus("warn", "You can accept anytime by tapping Go Online again.");
+    showStatus("warn", "आप जब चाहें, फिर से Go Online दबाकर स्वीकार कर सकते हैं।");
   });
 
   async function writeLocation(lat, lng) {
-    if (!db) { showStatus("err", "⚠ Firebase isn't connected — location isn't being saved yet. Check firebaseConfig, and check your internet connection."); return; }
+    if (!db) { showStatus("err", "⚠ Firebase से कनेक्शन नहीं है — आपकी लोकेशन अभी सेव नहीं हो रही। कृपया इंटरनेट कनेक्शन जाँचें।"); return; }
     lastWriteAt = Date.now();
     const payload = {
       name: nameEl.value.trim(),
@@ -1459,10 +1470,10 @@ function initTechApp() {
     }
     try {
       await fsSetDoc(fsDoc(db, "technicians", techId()), payload, { merge: true });
-      showStatus("ok", `<span class="dot"></span>Live — your location is visible to nearby customers<br/>Last update: ${new Date().toLocaleTimeString()}`);
+      showStatus("ok", `<span class="dot"></span>लाइव — आपकी लोकेशन आस-पास के ग्राहकों को दिख रही है<br/>आखिरी अपडेट: ${new Date().toLocaleTimeString()}`);
       if (!recordSaved) { recordSaved = true; renderVerifyCards(); }
     } catch (e) {
-      showStatus("err", "⚠ Couldn't write to Firestore: " + e.message);
+      showStatus("err", "⚠ लोकेशन सेव नहीं हो सकी: " + e.message);
     }
   }
 
@@ -1473,17 +1484,17 @@ function initTechApp() {
     // "deliberately went offline" from "still broadcasting."
     if (db) { try { await fsSetDoc(fsDoc(db, "technicians", techId()), { online: false, updatedAt: fsServerTimestamp() }, { merge: true }); } catch {} }
     if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-    showStatus("warn", "Location updates paused — you'll still be shown to nearby users using your last known location for a while.");
+    showStatus("warn", "लोकेशन अपडेट रुके हैं — कुछ देर तक आप अपनी आखिरी लोकेशन पर पास के ग्राहकों को दिखते रहेंगे।");
   }
 
   function goOnline() {
-    if (!("geolocation" in navigator)) { showStatus("err", "This browser doesn't support GPS."); return; }
-    showStatus("warn", "Requesting location permission…");
+    if (!("geolocation" in navigator)) { showStatus("err", "इस ब्राउज़र में GPS उपलब्ध नहीं है।"); return; }
+    showStatus("warn", "लोकेशन की अनुमति माँगी जा रही है…");
     const onPos = (pos) => {
       const now = Date.now();
       if (now - lastWriteAt >= WRITE_INTERVAL_MS || lastWriteAt === 0) writeLocation(pos.coords.latitude, pos.coords.longitude);
     };
-    const showErr = (err) => showStatus("err", "⚠ Location error: " + err.message + ". Make sure location is enabled and permission granted.");
+    const showErr = (err) => showStatus("err", "⚠ लोकेशन में समस्या: " + err.message + "। कृपया लोकेशन चालू करें और अनुमति दें।");
     watchId = navigator.geolocation.watchPosition(
       onPos,
       (err) => {
@@ -1504,7 +1515,7 @@ function initTechApp() {
   function rememberOnline(v) { try { if (v) localStorage.setItem(WAS_ONLINE_KEY, "1"); else localStorage.removeItem(WAS_ONLINE_KEY); } catch {} }
 
   function applyOnlineUI() {
-    toggleBtn.textContent = online ? "Go Offline" : "Go Online";
+    toggleBtn.innerHTML = online ? 'Go Offline<span style="display:block; font-size:12.5px; font-weight:600; margin-top:2px">ऑफ़लाइन हों</span>' : 'Go Online<span style="display:block; font-size:12.5px; font-weight:600; margin-top:2px">ऑनलाइन हों</span>';
     toggleBtn.classList.toggle("online", online);
     nameEl.disabled = online;
     phoneEl.disabled = online;
