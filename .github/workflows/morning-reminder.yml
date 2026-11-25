@@ -1,0 +1,67 @@
+name: Morning Go-Online reminder
+
+on:
+  schedule:
+    # 03:30 UTC = 09:00 AM India time
+    - cron: "30 3 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install firebase-admin
+        run: npm install firebase-admin@12
+      - name: Send reminders
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          cat > send.js <<'JS'
+          const admin = require("firebase-admin");
+          admin.initializeApp({ credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
+          const db = admin.firestore();
+          const APP_URL = "https://qmsmumbai-technician.github.io/kaarigar-app/";
+          const ms = (t) => (t && t.toMillis ? t.toMillis() : 0);
+          (async () => {
+            const cfg = await db.doc("settings/morningReminder").get();
+            if (cfg.exists && cfg.data().paused === true) { console.log("Paused from admin screen. Nothing sent."); return; }
+            const tokens = await db.collection("pushTokens").get();
+            const send = [];
+            let live = 0, skipped = 0;
+            for (const d of tokens.docs) {
+              const t = d.data();
+              if (t.enrolled !== true || !t.token) { skipped++; continue; }
+              const tech = await db.collection("technicians").doc(d.id).get();
+              if (!tech.exists) { skipped++; continue; }
+              const r = tech.data();
+              if (r.hidden === true) { skipped++; continue; }
+              if (r.online === true && Date.now() - ms(r.updatedAt) <= 10 * 60 * 1000) { live++; continue; }
+              send.push({ id: d.id, token: t.token });
+            }
+            let sent = 0, removed = 0;
+            for (let i = 0; i < send.length; i += 500) {
+              const batch = send.slice(i, i + 500);
+              const res = await admin.messaging().sendEach(batch.map((x) => ({
+                token: x.token,
+                data: { title: "सुप्रभात! ऑनलाइन हो जाइए", body: "टैप करें और आज के ग्राहकों को अपनी लोकेशन दिखाइए।", url: APP_URL + "?online=1" },
+                webpush: { headers: { Urgency: "high", TTL: "7200" } },
+                android: { priority: "high", ttl: 7200 * 1000 }
+              })));
+              for (let k = 0; k < res.responses.length; k++) {
+                const x = res.responses[k];
+                if (x.success) { sent++; continue; }
+                const code = x.error && x.error.code;
+                console.log("Failed for", batch[k].id, code);
+                if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
+                  await db.collection("pushTokens").doc(batch[k].id).delete(); removed++;
+                }
+              }
+            }
+            await db.doc("settings/morningReminder").set({ lastRunAt: admin.firestore.FieldValue.serverTimestamp(), lastSent: sent, lastAlreadyOnline: live, lastSkipped: skipped, lastRemoved: removed }, { merge: true });
+            console.log(`Sent ${sent}, already online ${live}, skipped ${skipped}, removed dead tokens ${removed}`);
+          })().catch((e) => { console.error(e); process.exit(1); });
+          JS
+          node send.js
