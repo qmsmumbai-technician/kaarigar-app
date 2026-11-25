@@ -476,6 +476,19 @@
       <button id="btn-addservice-confirm" disabled style="width:100%; padding:15px; border:none; border-radius:10px; font-size:15px; font-weight:700; color:#1C2541; background:#F2A93B; cursor:pointer; font-family:'Inter',sans-serif;">Confirm · पक्का करें</button>
     </div>
 
+    <div id="push-card" style="display:none; margin:0 0 14px; padding:14px; border-radius:10px; background:#FBFAF6; border:1px solid rgba(242,169,59,0.55);">
+      <div id="push-ask">
+        <div style="display:flex; align-items:center; gap:6px; font-weight:700; font-size:15px; color:#1C2541; margin-bottom:6px;"><span class="msr" style="font-size:19px; color:#C77D1E">notifications_active</span> रोज़ सुबह याद दिलाएँ?</div>
+        <div style="font-size:13px; color:#1C2541; line-height:1.55; margin-bottom:12px;">हर सुबह लगभग 9 बजे हम आपको "Go Online" करने की याद दिलाएँगे। नोटिफ़िकेशन पर टैप करने से ऐप खुलेगा, और वेरिफाई हो चुके कारीगर अपने आप ऑनलाइन हो जाएँगे।</div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" id="btn-push-yes" style="flex:1; padding:12px 8px; border:none; border-radius:9px; font-size:14px; font-weight:700; color:#1C2541; background:#F2A93B; cursor:pointer; font-family:'Inter',sans-serif;">हाँ, याद दिलाएँ</button>
+          <button type="button" id="btn-push-no" style="flex:1; padding:12px 8px; border:1px solid rgba(28,37,65,0.25); border-radius:9px; font-size:14px; font-weight:600; color:#1C2541; background:transparent; cursor:pointer; font-family:'Inter',sans-serif;">अभी नहीं</button>
+        </div>
+        <p class="hint" style="margin-top:8px">नोटिफ़िकेशन आप फ़ोन की सेटिंग में कभी भी बंद कर सकते हैं।</p>
+      </div>
+      <div id="push-msg" style="font-size:13px; line-height:1.5; color:#1C2541; margin-top:0;"></div>
+    </div>
+
     <p class="hint" id="trial-status" style="margin-bottom:8px"></p>
     <div style="height:8px"></div>
     <button id="btn-toggle" style="display:none">Go Online<span style="display:block; font-size:12.5px; font-weight:600; margin-top:2px">ऑनलाइन हों</span></button>
@@ -1271,6 +1284,7 @@ function initTechApp() {
     updateAddServiceButtonState();
     toggleBtn.style.display = "block";
     updateToggleState();
+    maybeAskPush();
   }
 
   let addServiceChoice = null;
@@ -1304,6 +1318,7 @@ function initTechApp() {
     techSummaryEl.style.display = "none";
     techAddServiceEl.style.display = "block";
     toggleBtn.style.display = "none";
+    pushCardEl.style.display = "none";
   });
 
   document.getElementById("btn-addservice-back").addEventListener("click", () => {
@@ -1341,6 +1356,13 @@ function initTechApp() {
           techIsNew = false;
           techVerified = data.verified === true;
           showSummary();
+          // Opened from the morning reminder: go online automatically (verified technicians only)
+          try {
+            if (/[?&]online=1/.test(location.search)) {
+              history.replaceState(null, "", location.pathname);
+              if (techVerified) rememberOnline(true);
+            }
+          } catch (e) {}
           resumeIfWasOnline();
           return;
         }
@@ -1471,7 +1493,7 @@ function initTechApp() {
     try {
       await fsSetDoc(fsDoc(db, "technicians", techId()), payload, { merge: true });
       showStatus("ok", `<span class="dot"></span>लाइव — आपकी लोकेशन आस-पास के ग्राहकों को दिख रही है<br/>आखिरी अपडेट: ${new Date().toLocaleTimeString()}`);
-      if (!recordSaved) { recordSaved = true; renderVerifyCards(); }
+      if (!recordSaved) { recordSaved = true; renderVerifyCards(); maybeAskPush(); }
     } catch (e) {
       showStatus("err", "⚠ लोकेशन सेव नहीं हो सकी: " + e.message);
     }
@@ -1564,6 +1586,91 @@ function initTechApp() {
   // the same as tapping "Go Offline". Explicit "Go Offline" still works
   // immediately via goOffline() above.
 
+  // ------------------------------------------------------------------
+  // Morning reminder (push notification). Dormant until PUSH_VAPID_KEY is set.
+  // Asks once per day (max PUSH_MAX_REFUSALS refusals), stores the device token
+  // in pushTokens/<phone>. The reminder itself is sent by a scheduled job.
+  // ------------------------------------------------------------------
+  const PUSH_VAPID_KEY = "BOcdtsz_2uKs-L_xtCbh0D2DVfHdHPuPRfZ2Q8y6Zcu0k3Kcg1ZD5uqP6g6Xbf5RjkKEJ6bJiIAzOepicMl1Ob8";
+  const PUSH_STORE = "kaarigar_push";
+  const PUSH_MAX_REFUSALS = 3;
+  let fbApp = null;
+  const pushCardEl = document.getElementById("push-card");
+  const pushAskEl = document.getElementById("push-ask");
+  const pushMsgEl = document.getElementById("push-msg");
+  function todayStr() { const d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+  function pushState() {
+    const base = { enrolled: false, refusals: 0, lastAsk: "", lastSync: "" };
+    try { return Object.assign(base, JSON.parse(localStorage.getItem(PUSH_STORE) || "{}")); } catch (e) { return base; }
+  }
+  function savePushState(st) { try { localStorage.setItem(PUSH_STORE, JSON.stringify(st)); } catch (e) {} }
+  function pushSupported() {
+    return PUSH_VAPID_KEY.length > 20 && "Notification" in window && "serviceWorker" in navigator && "PushManager" in window;
+  }
+  async function getPushToken() {
+    const m = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js");
+    const reg = await navigator.serviceWorker.ready;
+    return m.getToken(m.getMessaging(fbApp), { vapidKey: PUSH_VAPID_KEY, serviceWorkerRegistration: reg });
+  }
+  async function savePushToken(token) {
+    const id = (phoneEl.value || "").replace(/\D/g, "");
+    if (!db || id.length < 10) return false;
+    await fsSetDoc(fsDoc(db, "pushTokens", id), { token: token, phone: id, enrolled: true, updatedAt: fsServerTimestamp() }, { merge: true });
+    return true;
+  }
+  async function syncPushToken() {
+    const st = pushState();
+    if (Notification.permission !== "granted") { st.enrolled = false; savePushState(st); return; }
+    if (st.lastSync === todayStr()) return;
+    try {
+      const t = await getPushToken();
+      if (t && await savePushToken(t)) { st.lastSync = todayStr(); savePushState(st); }
+    } catch (e) {}
+  }
+  function maybeAskPush() {
+    try {
+      if (!pushSupported() || !fbApp || !db) return;
+      if (Notification.permission === "denied") return;
+      const st = pushState();
+      if (st.enrolled) { syncPushToken(); return; }
+      if (st.refusals >= PUSH_MAX_REFUSALS || st.lastAsk === todayStr()) return;
+      if ((phoneEl.value || "").replace(/\D/g, "").length < 10) return;
+      pushAskEl.style.display = "block";
+      pushMsgEl.textContent = "";
+      pushCardEl.style.display = "block";
+    } catch (e) {}
+  }
+  function pushRefused() {
+    const st = pushState();
+    st.refusals += 1; st.lastAsk = todayStr();
+    savePushState(st);
+    pushCardEl.style.display = "none";
+  }
+  document.getElementById("btn-push-no").addEventListener("click", pushRefused);
+  document.getElementById("btn-push-yes").addEventListener("click", async () => {
+    pushMsgEl.textContent = "";
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") { pushRefused(); return; }
+      const token = await getPushToken();
+      if (!token || !(await savePushToken(token))) throw new Error("token");
+      const st = pushState();
+      st.enrolled = true; st.lastSync = todayStr();
+      savePushState(st);
+      pushAskEl.style.display = "none";
+      pushMsgEl.textContent = "✅ ठीक है! अब से हर सुबह आपको याद दिलाया जाएगा।";
+      setTimeout(() => { pushCardEl.style.display = "none"; }, 4000);
+    } catch (e) {
+      pushMsgEl.textContent = "⚠ अभी चालू नहीं हो सका। थोड़ी देर बाद फिर कोशिश करें।";
+    }
+  });
+  // Tapping the notification while the app is already open
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("message", (ev) => {
+      if (ev.data && ev.data.type === "GO_ONLINE" && techVerified && !online) { rememberOnline(true); resumeIfWasOnline(); }
+    });
+  }
+
   const configNote = document.getElementById("config-note");
   if (!isConfigured) {
     configNote.textContent = "⚠ Firebase not configured yet — edit firebaseConfig in index.html";
@@ -1573,7 +1680,7 @@ function initTechApp() {
       try {
         const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
         const fs = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-        const app = initializeApp(firebaseConfig);
+        const app = initializeApp(firebaseConfig); fbApp = app;
         db = fs.getFirestore(app);
         fsDoc = fs.doc; fsSetDoc = fs.setDoc; fsServerTimestamp = fs.serverTimestamp; fsGetDoc = fs.getDoc; fsIncrement = fs.increment;
         configNote.style.display = "none";
