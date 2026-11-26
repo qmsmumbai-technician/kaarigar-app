@@ -179,7 +179,8 @@
   .tech-body { flex:1; padding:12px; min-width:0; }
   .tech-top { display:flex; align-items:center; gap:10px; }
   .avatar { width:36px; height:36px; border-radius:50%; background:rgba(28,37,65,.08); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#1C2541; flex-shrink:0; }
-  .tech-name { font-weight:600; font-size:15px; color:#20242C; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tech-name { font-weight:600; font-size:15px; color:#20242C; overflow-wrap:anywhere; line-height:1.3; }
+  .tech-name .verified-tick, .tech-name .verified-label { white-space:nowrap; }
   .live-row { display:flex; align-items:center; gap:5px; margin-top:2px; }
   .live-dot { width:6px; height:6px; border-radius:50%; background:#2E8B57; position:relative; }
   .live-dot::after { content:''; position:absolute; inset:-3px; border-radius:50%; background:#2E8B57; opacity:.4; animation:ping 1.5s infinite; }
