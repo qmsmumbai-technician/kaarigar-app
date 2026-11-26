@@ -229,12 +229,12 @@
   function waMessage(r) {
     const hi = "नमस्कार जी 🙏";
     if ((r.leadCount || 0) > 0) {
-      return `${hi}\nMy Kaarigar ऐप से एक ग्राहक ने आपको कॉल किया है। ऐप इंस्टॉल करके Go Online करें, ताकि और ग्राहक आपको आसानी से ढूंढ सकें (पहले 10 ग्राहक-कॉल फ्री):\n${PLAY_LINK}\n– Abode Digital Technology`;
+      return `${hi}\nMy Kaarigar ऐप से एक ग्राहक ने आपको कॉल किया है। ऐप इंस्टॉल करके Go Online करें, ताकि और ग्राहक आपको आसानी से ढूंढ सकें (पहले 10 ग्राहक-कॉल फ्री):\n${PLAY_LINK}\n\n– Abode Digital Technology\n\nMobile/Whatsapp - 9860046593`;
     }
     const ids = Array.isArray(r.trades) ? r.trades.slice(0, 2) : [];
     const trades = ids.map((id) => tradeLabel(id)).join(" / ");
     const role = trades ? `${trades} कारीगर` : "कारीगर";
-    return `${hi}\nआपका नंबर *My Kaarigar – Home Services* ऐप में ${role} के रूप में जोड़ा गया है (फ्री)। आस-पास के ग्राहक आपको सीधे कॉल कर सकते हैं। ऐप इंस्टॉल करके Go Online करें:\n${PLAY_LINK}\n– Abode Digital Technology`;
+    return `${hi}\nआपका नंबर *My Kaarigar – Home Services* ऐप में ${role} के रूप में जोड़ा गया है (फ्री)। आस-पास के ग्राहक आपको सीधे कॉल कर सकते हैं। ऐप इंस्टॉल करके Go Online करें:\n${PLAY_LINK}\n\n– Abode Digital Technology\n\nMobile/Whatsapp - 9860046593`;
   }
 
   // Trades: app id, label, and words people may write
