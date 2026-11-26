@@ -691,8 +691,10 @@ function initUserApp() {
   }
   locate();
 
+  let listStart = 0;
   function openTrade(trade) {
     currentTrade = trade;
+    listStart = 0;
     screenServices.style.display = "none";
     screenList.style.display = "block";
     listContent.innerHTML = `<div class="searching"><div class="spinner"></div>SEARCHING LIVE DATABASE…</div>`;
@@ -816,24 +818,28 @@ function initUserApp() {
     const byNearest = [...pool].sort((a, b) => (a.tier - b.tier) || (a.distance - b.distance));
     const MAX_SHOWN = 5;
     const isCapped = !isAll && byNearest.length > MAX_SHOWN;
-    const selected = isCapped ? byNearest.slice(0, MAX_SHOWN) : byNearest;
+    const selected = byNearest;
 
     // Live first, then active today, then last-seen; nearest first inside each group.
     let sorted = [...selected].sort((a,b) => (a.tier - b.tier) || (a.distance - b.distance));
 
-    listHeading.textContent = isAll ? `${sorted.length} technicians near you` : `${sorted.length} ${trade.label.toLowerCase()} near you`;
+    if (listStart >= sorted.length) listStart = 0;
+    const pgEnd = isCapped ? Math.min(listStart + MAX_SHOWN, sorted.length) : sorted.length;
+    const pageItems = isCapped ? sorted.slice(listStart, pgEnd) : sorted;
+    const countText = isCapped ? `${listStart + 1}–${pgEnd} of ${sorted.length}` : `${sorted.length}`;
+    listHeading.textContent = isAll ? `${countText} technicians near you` : `${countText} ${trade.label.toLowerCase()} near you`;
     if (usedRange !== DEFAULT_RANGE_KM) {
       listHeading.innerHTML += `<div style="font-size:11px; color:#C77D1E; font-weight:600; font-family:'JetBrains Mono',monospace; margin-top:4px;">None very close — showing technicians a little further away</div>`;
     }
     if (isCapped) {
-      listHeading.innerHTML += `<div style="font-size:11px; color:#8891A0; font-weight:600; font-family:'JetBrains Mono',monospace; margin-top:4px;">Showing the best ${MAX_SHOWN} of ${byNearest.length}</div>`;
+      listHeading.innerHTML += `<div style="font-size:11px; color:#8891A0; font-weight:600; font-family:'JetBrains Mono',monospace; margin-top:4px;">Showing ${listStart + 1} to ${pgEnd} of ${byNearest.length} nearest</div>`;
     }
 
     if (sorted.length === 0) {
       listContent.innerHTML = `<div class="empty-box">No ${isAll ? "technicians" : trade.label.toLowerCase() + "s"} found within 3.5 km right now. Open the Technician app on another device and go online to test live matching.</div>`;
       return;
     }
-    listContent.innerHTML = sorted.map((t) => {
+    listContent.innerHTML = pageItems.map((t) => {
       // When browsing a specific category, always show THAT category's icon/color —
       // not whichever trade happens to be first in the technician's list. The
       // "show everyone nearby" (isAll) view shows a band for EVERY trade they have
@@ -881,6 +887,31 @@ function initUserApp() {
         </div>
       </div>`;
     }).join("");
+    if (isCapped) {
+      const prevN = Math.min(MAX_SHOWN, listStart);
+      const nextN = Math.min(MAX_SHOWN, sorted.length - pgEnd);
+      const navEl = document.createElement("div");
+      navEl.style.cssText = "display:flex;gap:8px;margin:4px 0 8px";
+      const bs = "flex:1;padding:14px 8px;font-weight:700;font-size:14px;border-radius:10px;font-family:'Inter',sans-serif;cursor:pointer;";
+      if (listStart > 0) {
+        const pb = document.createElement("button");
+        pb.type = "button";
+        pb.style.cssText = bs + "border:1.5px solid #1C2541;background:transparent;color:#1C2541;";
+        pb.textContent = "← Previous " + prevN;
+        pb.addEventListener("click", () => { listStart = Math.max(0, listStart - MAX_SHOWN); renderList(); window.scrollTo(0, 0); });
+        navEl.appendChild(pb);
+      }
+      if (pgEnd < sorted.length) {
+        const nb = document.createElement("button");
+        nb.type = "button";
+        nb.style.cssText = bs + "border:0;background:#1C2541;color:#F6F4EF;";
+        nb.textContent = "Next " + nextN + " →";
+        nb.addEventListener("click", () => { listStart += MAX_SHOWN; renderList(); window.scrollTo(0, 0); });
+        navEl.appendChild(nb);
+      }
+      listContent.appendChild(navEl);
+    }
+
 
     document.querySelectorAll(".loc-btn").forEach((el) => {
       el.addEventListener("click", () => {
