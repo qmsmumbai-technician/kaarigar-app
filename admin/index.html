@@ -54,9 +54,30 @@
   .b-chg { background:#E9E5D9; color:#1C2541; font-size:12px; padding:6px 10px; margin-top:6px; }
   #ct-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:50; align-items:center; justify-content:center; padding:20px; }
   #ct-box { background:#fff; border-radius:14px; padding:18px; width:100%; max-width:380px; box-shadow:0 8px 28px rgba(0,0,0,.3); }
+  .b-help { background:#E6EEF9; color:#1C2541; border:1px solid #C9D6EE; }
+  #help-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:60; align-items:center; justify-content:center; padding:14px; }
+  #help-box { background:#fff; border-radius:14px; padding:16px; width:100%; max-width:420px; max-height:92vh; overflow-y:auto; box-shadow:0 8px 28px rgba(0,0,0,.3); }
+  #help-box .hi { padding:8px 0; border-top:1px solid #EEEAE0; }
+  #help-box .hi b { display:block; font-size:13.5px; color:#1C2541; }
+  #help-box .hi span { font-size:13px; color:#5A6072; line-height:1.5; }
+  #help-dots { display:flex; gap:6px; } #help-dots i { width:8px; height:8px; border-radius:50%; background:#D8D4C8; display:inline-block; } #help-dots i.on { background:#1C2541; }
 </style>
 </head>
 <body>
+
+<div id="help-modal"><div id="help-box">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <span id="help-pg" class="muted"></span>
+    <button class="b-ghost" id="help-close" type="button" style="padding:6px 12px">Close</button>
+  </div>
+  <h1 id="help-title" style="font-size:17px;margin:0 0 6px"></h1>
+  <div id="help-body"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:8px">
+    <button class="b-ghost" id="help-back" type="button">Back</button>
+    <span id="help-dots"></span>
+    <button class="b-main" id="help-next" type="button">Next</button>
+  </div>
+</div></div>
 
 <div id="ct-modal"><div id="ct-box">
   <h1 style="font-size:17px">Change / Remove Trade</h1>
@@ -88,7 +109,10 @@
       <h1>Kaarigar Admin</h1>
       <p class="sub" id="who">Signed in</p>
     </div>
-    <button class="b-ghost" id="btn-logout" type="button">Sign out</button>
+    <div style="display:flex;gap:6px;flex-shrink:0">
+      <button class="b-help" id="btn-help" type="button">? Help</button>
+      <button class="b-ghost" id="btn-logout" type="button">Sign out</button>
+    </div>
   </div>
 
   <div class="row">
@@ -644,6 +668,58 @@
   $("btn-login").addEventListener("click", doLogin);
   $("password").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
   $("btn-logout").addEventListener("click", () => A.signOut(auth));
+
+  // ---- Help guide (4 pages) ----
+  const HELP = [
+    { t: "Top of the page", i: [
+      ["Search", "Type a name or phone number to find one technician."],
+      ["Refresh", "Reloads the list from the database. Use it after any change."],
+      ["Online now", "Technicians whose app has been live in the last 10 minutes."],
+      ["Active today", "Technicians who opened the app at any time today."],
+      ["Needs follow-up", "Technicians who finished the trial and used the extra enquiries."],
+      ["Unverified", "Technicians whose number you haven't verified yet."] ] },
+    { t: "The filter list", i: [
+      ["Needs follow-up", "12 or more enquiries, not paid, not hidden. Contact them for payment, or hide them."],
+      ["Trial over", "10 or 11 enquiries. They still have extra enquiries left."],
+      ["Trial running", "Fewer than 10 enquiries."],
+      ["Paid", "Paid until a date in the future."],
+      ["Hidden", "Hidden from customers. A hidden technician shows only here."],
+      ["Active today", "Opened the app today, latest first."],
+      ["Got enquiries", "At least one enquiry, latest first."],
+      ["Added by me", "Imported by you, and has not opened the app yet."],
+      ["All, Verified, Unverified", "Everyone, or only by the green tick."] ] },
+    { t: "Buttons for selected technicians", i: [
+      ["How to use", "Tick the box at the left of a row. The top box ticks every row shown. The number in brackets is how many you ticked. Buttons stay grey until you tick."],
+      ["Mark Verified", "Only if the WhatsApp message came from that same number. Customers then see a green tick."],
+      ["Remove Verified", "Takes the green tick away."],
+      ["Mark Paid, 3 months", "Only after you have received the payment. Hidden technicians show again."],
+      ["Hide from customers", "Their data stays saved. Customers can't see them."],
+      ["Show again", "Makes hidden technicians visible again."],
+      ["Delete", "Removes the record for good. Use your backup file if you need it back."],
+      ["WhatsApp (each row)", "Opens a chat with that technician. For technicians who haven't joined, it adds an invitation message."] ] },
+    { t: "Tools and the morning reminder", i: [
+      ["Change / Remove Trade", "Type the 10-digit number and tap Find. Then add a trade, change one, or remove one. A technician can have two trades at most."],
+      ["Download backup", "Saves all technicians as a spreadsheet file. Do this once a week and keep it on Drive."],
+      ["Import technicians", "One per line: Name, Trade, Number, Area. You can add a Maps link or lat, lng at the end. Tap Check list first, then Add. They show to customers as unverified."],
+      ["Morning reminder", "Shows ON or PAUSED, how many technicians are enrolled, and the last run. Pause reminders stops them, and Resume starts them again."] ] }
+  ];
+  let helpPage = 0;
+  function renderHelp() {
+    const p = HELP[helpPage];
+    $("help-pg").textContent = "Page " + (helpPage + 1) + " of " + HELP.length;
+    $("help-title").textContent = p.t;
+    $("help-body").innerHTML = p.i.map((x) => '<div class="hi"><b>' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></div>').join("");
+    $("help-dots").innerHTML = HELP.map((_, k) => '<i class="' + (k === helpPage ? "on" : "") + '"></i>').join("");
+    $("help-back").disabled = helpPage === 0;
+    $("help-next").textContent = helpPage === HELP.length - 1 ? "Done" : "Next";
+    $("help-box").scrollTop = 0;
+  }
+  $("btn-help").addEventListener("click", () => { helpPage = 0; renderHelp(); $("help-modal").style.display = "flex"; });
+  $("help-close").addEventListener("click", () => { $("help-modal").style.display = "none"; });
+  $("help-back").addEventListener("click", () => { if (helpPage > 0) { helpPage--; renderHelp(); } });
+  $("help-next").addEventListener("click", () => {
+    if (helpPage < HELP.length - 1) { helpPage++; renderHelp(); } else { $("help-modal").style.display = "none"; }
+  });
 
   (async () => {
     try {
