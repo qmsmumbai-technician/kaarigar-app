@@ -340,7 +340,7 @@
 
       <div class="hero">
         <h2>Local technicians near you</h2>
-        <p>Local technicians within 2 km — fast and nearby.</p>
+        <p>Local technicians near you — fast and nearby.</p>
         <div class="hero-live">
           <span class="dot"></span>
           <span class="count" id="hero-count">— technicians online near you right now</span>
@@ -352,7 +352,7 @@
 
       <button class="emergency" id="btn-emergency">
         <div class="siren"><span class="msr" style="font-size:26px">emergency</span></div>
-        <div style="flex:1"><h3>Need help now?</h3><p>See every technician within 2 km, online or offline, any trade</p></div>
+        <div style="flex:1"><h3>Need help now?</h3><p>See every technician near you, online or offline, any trade</p></div>
         <div class="arrow"><span class="msr" style="font-size:18px">arrow_forward</span></div>
       </button>
 
@@ -732,7 +732,7 @@ function initUserApp() {
   function renderHero() {
     if (!db) { heroCount.textContent = "connecting…"; return; }
     const count = computeFiltered("__all__", DEFAULT_RANGE_KM).length;
-    heroCount.textContent = `${count} technician${count === 1 ? "" : "s"} reachable within 2 km`;
+    heroCount.textContent = `${count} technician${count === 1 ? "" : "s"} reachable near you`;
   }
 
   // Remembers on THIS phone which technicians the customer already called today,
@@ -820,9 +820,9 @@ function initUserApp() {
     // Live first, then active today, then last-seen; nearest first inside each group.
     let sorted = [...selected].sort((a,b) => (a.tier - b.tier) || (a.distance - b.distance));
 
-    listHeading.textContent = isAll ? `${sorted.length} technicians within ${usedRange} km` : `${sorted.length} ${trade.label.toLowerCase()} within ${usedRange} km`;
+    listHeading.textContent = isAll ? `${sorted.length} technicians near you` : `${sorted.length} ${trade.label.toLowerCase()} near you`;
     if (usedRange !== DEFAULT_RANGE_KM) {
-      listHeading.innerHTML += `<div style="font-size:11px; color:#C77D1E; font-weight:600; font-family:'JetBrains Mono',monospace; margin-top:4px;">None within 2 km — showing up to 3.5 km instead</div>`;
+      listHeading.innerHTML += `<div style="font-size:11px; color:#C77D1E; font-weight:600; font-family:'JetBrains Mono',monospace; margin-top:4px;">None very close — showing technicians a little further away</div>`;
     }
     if (isCapped) {
       listHeading.innerHTML += `<div style="font-size:11px; color:#8891A0; font-weight:600; font-family:'JetBrains Mono',monospace; margin-top:4px;">Showing the best ${MAX_SHOWN} of ${byNearest.length}</div>`;
@@ -872,7 +872,7 @@ function initUserApp() {
             return `<span class="trade-pill" style="color:${meta.color}">${meta.label}</span>`;
           }).join("")}</div>` : ""}
           <div class="meta-row">
-            ${t.areaOnly ? `<span>📍 ~${t.distance.toFixed(1)} km</span>` : `<span>📍 ${t.distance.toFixed(2)} km</span>
+            ${t.areaOnly ? `<span>📍 <b style="font-weight:800;color:#D2691E">~${t.distance.toFixed(1)} km</b></span>` : `<span>📍 <b style="font-weight:800;color:#D2691E">${t.distance.toFixed(2)} km</b></span>
             <span>⏱ ~${etaMin(t.distance)} min</span>`}
           </div>
           <a class="call-btn" href="tel:${t.phone || ""}" data-techid="${t._id || ""}">📞 Call ${(t.name || "technician").split(" ")[0]}</a>
