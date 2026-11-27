@@ -141,6 +141,8 @@
     <button class="b-warn" id="btn-hide" type="button" disabled>Hide from customers (0)</button>
     <button class="b-ghost" id="btn-show" type="button" disabled>Show again (0)</button>
     <button class="b-del" id="btn-delete" type="button" disabled>Delete (0)</button>
+    <button class="b-main" id="btn-msgmark" type="button" disabled>Mark Messaged (0)</button>
+    <button class="b-ghost" id="btn-msgclear" type="button" disabled>Clear Messaged (0)</button>
     <button class="b-main wide" id="btn-chgtrade" type="button">✎ Change / Remove Trade (by mobile number)</button>
     <button class="b-main wide" id="btn-backup" type="button">⬇ Download backup (all technicians)</button>
   </div>
@@ -423,15 +425,17 @@
     $("btn-paid").textContent = `Mark Paid - 3 months (${n})`;
     $("btn-hide").textContent = `Hide from customers (${n})`;
     $("btn-show").textContent = `Show again (${n})`;
-    ["btn-verify", "btn-unverify", "btn-delete", "btn-paid", "btn-hide", "btn-show"].forEach((id) => { $(id).disabled = n === 0; });
+    $("btn-msgmark").textContent = `Mark Messaged (${n})`;
+    $("btn-msgclear").textContent = `Clear Messaged (${n})`;
+    ["btn-verify", "btn-unverify", "btn-delete", "btn-paid", "btn-hide", "btn-show", "btn-msgmark", "btn-msgclear"].forEach((id) => { $(id).disabled = n === 0; });
   }
 
   function msgText(id) {
     const o = outreach[id];
-    if (!o || !o.at) return "";
+    if (!o || !o.at) return "Not messaged yet";
     const d = new Date(o.at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" });
     const due = (Date.now() - o.at) >= FOLLOWUP_DAYS * 86400000;
-    return "Messaged " + d + " · " + o.count + (o.count === 1 ? " time" : " times") + (due ? " · follow-up due" : "");
+    return "✓ Messaged " + d + " · " + o.count + (o.count === 1 ? " time" : " times") + (due ? " · follow-up due" : "");
   }
   $("rows").addEventListener("click", (e) => {
     const a = e.target.closest && e.target.closest("a.wa[data-track]");
@@ -440,7 +444,7 @@
     const prev = outreach[id] ? outreach[id].count : 0;
     outreach[id] = { at: Date.now(), count: prev + 1 };
     const el = document.querySelector('.msgd[data-msg="' + id + '"]');
-    if (el) el.textContent = msgText(id);
+    if (el) { el.textContent = msgText(id); el.style.color = "#8B5E1E"; }
     F.setDoc(F.doc(db, "outreach", id), { phone: id, lastAt: F.serverTimestamp(), count: F.increment(1) }, { merge: true })
       .catch((err) => setStatus("⚠ Could not save the 'Messaged' mark: " + (err.code || err.message), "err"));
   });
@@ -475,7 +479,7 @@
           <td><div class="nm">${esc(r.name) || "<span class='muted'>(no name)</span>"}</div>
               <div class="ph">${esc(r.id)}</div>
               <div class="tr">${esc((r.trades || []).map(tradeLabel).join(", "))}</div>
-              ${notJoined(r) ? '<div class="tr msgd" data-msg="' + esc(r.id) + '" style="color:#8B5E1E;font-weight:600">' + msgText(r.id) + '</div>' : ""}
+              ${notJoined(r) ? '<div class="tr msgd" data-msg="' + esc(r.id) + '" style="' + (outreach[r.id] ? 'color:#8B5E1E' : 'color:#2B6CB0') + ';font-weight:700">' + msgText(r.id) + '</div>' : ""}
               <div class="ld">${leadsText(r)}</div>${activeToday(r) ? '<div class="tr" style="color:#1F6B42;font-weight:600">' + (liveNow(r) ? "Online now" : "Active " + ago(ms(r.updatedAt))) + '</div>' : ""}${ms(r.lastLeadAt) ? '<div class="tr" style="color:#1F6B42;font-weight:600">Last enquiry ' + ago(ms(r.lastLeadAt)) + '</div>' : ""}${notJoined(r) ? '<div class="tr">Added by you · ' + esc(r.area || "") + '</div>' : ""}</td>
           <td>${(() => { const st = statusOf(r); return `<span class="chipf ${st.cls}">${st.label}</span><div class="tr">${esc(st.extra)}</div>`; })()}
               <div style="margin-top:4px"><span class="badge ${r.verified === true ? "b-yes" : "b-no"}">${r.verified === true ? "Verified" : "Unverified"}</span></div></td>
@@ -630,7 +634,7 @@
   async function runBatch(verbLabel, fn) {
     const ids = selectedIds();
     if (!ids.length) return;
-    ["btn-verify", "btn-unverify", "btn-delete", "btn-paid", "btn-hide", "btn-show"].forEach((id) => { $(id).disabled = true; });
+    ["btn-verify", "btn-unverify", "btn-delete", "btn-paid", "btn-hide", "btn-show", "btn-msgmark", "btn-msgclear"].forEach((id) => { $(id).disabled = true; });
     setStatus(`${verbLabel} ${ids.length} record(s)…`);
     let done = 0, failed = 0, firstErr = "";
     for (const id of ids) {
@@ -666,6 +670,18 @@
   $("btn-show").addEventListener("click", () => {
     if (!confirm(`Show ${selectedIds().length} technician(s) to customers again?`)) return;
     runBatch("Showing", (id) => F.updateDoc(F.doc(db, "technicians", id), { hidden: false }));
+  });
+  $("btn-msgmark").addEventListener("click", () => {
+    const ids = selectedIds().filter((id) => { const r = records.find((x) => x.id === id); return r && notJoined(r); });
+    if (!ids.length) { alert("Tick technicians who have not joined yet. Technicians who have joined are not tracked."); return; }
+    if (!confirm(`Mark ${ids.length} technician(s) as messaged today?\n\nWhatsApp will NOT open. Use this only for people you have already messaged.`)) return;
+    runBatch("Marking", (id) => { const r = records.find((x) => x.id === id); if (!r || !notJoined(r)) return Promise.resolve(); return F.setDoc(F.doc(db, "outreach", id), { phone: id, lastAt: F.serverTimestamp(), count: F.increment(1) }, { merge: true }); });
+  });
+  $("btn-msgclear").addEventListener("click", () => {
+    const ids = selectedIds().filter((id) => outreach[id]);
+    if (!ids.length) { alert("None of the ticked technicians has a Messaged mark."); return; }
+    if (!confirm(`Remove the Messaged mark from ${ids.length} technician(s)?\n\nThey will show as "Not messaged yet" again.`)) return;
+    runBatch("Clearing", (id) => outreach[id] ? F.deleteDoc(F.doc(db, "outreach", id)) : Promise.resolve());
   });
   $("btn-delete").addEventListener("click", () => {
     const names = selectedIds().map((id) => { const r = records.find((x) => x.id === id); return r && r.name ? `${r.name} (${id})` : id; }).join("\n");
@@ -730,6 +746,8 @@
       ["Mark Verified", "Only if the WhatsApp message came from that same number. Customers then see a green tick."],
       ["Remove Verified", "Takes the green tick away."],
       ["Mark Paid, 3 months", "Only after you have received the payment. Hidden technicians show again."],
+      ["Mark Messaged", "Tick technicians who have not joined and you already messaged on WhatsApp, then tap this. WhatsApp does not open. Use it for people you messaged before the Messaged mark existed."],
+      ["Clear Messaged", "Removes the Messaged mark from the ticked rows. Use it after a wrong mark."],
       ["Hide from customers", "Their data stays saved. Customers can't see them."],
       ["Show again", "Makes hidden technicians visible again."],
       ["Delete", "Removes the record for good. Use your backup file if you need it back."],
