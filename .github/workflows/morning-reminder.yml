@@ -2,8 +2,10 @@ name: Morning Go-Online reminder
 
 on:
   schedule:
-    # 03:30 UTC = 09:00 AM India time
-    - cron: "30 3 * * *"
+    # 02:40 UTC = 08:10 AM India time (main run)
+    - cron: "40 2 * * *"
+    # 05:10 UTC = 10:40 AM India time (backup run: only reminds those not yet reminded today)
+    - cron: "10 5 * * *"
   workflow_dispatch: {}
 
 jobs:
@@ -25,15 +27,17 @@ jobs:
           const db = admin.firestore();
           const APP_URL = "https://qmsmumbai-technician.github.io/kaarigar-app/";
           const ms = (t) => (t && t.toMillis ? t.toMillis() : 0);
+          const todayIST = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
           (async () => {
             const cfg = await db.doc("settings/morningReminder").get();
             if (cfg.exists && cfg.data().paused === true) { console.log("Paused from admin screen. Nothing sent."); return; }
             const tokens = await db.collection("pushTokens").get();
             const send = [];
-            let live = 0, skipped = 0;
+            let live = 0, skipped = 0, already = 0;
             for (const d of tokens.docs) {
               const t = d.data();
               if (t.enrolled !== true || !t.token) { skipped++; continue; }
+              if (t.lastReminderDate === todayIST) { already++; continue; }
               const tech = await db.collection("technicians").doc(d.id).get();
               if (!tech.exists) { skipped++; continue; }
               const r = tech.data();
@@ -52,7 +56,11 @@ jobs:
               })));
               for (let k = 0; k < res.responses.length; k++) {
                 const x = res.responses[k];
-                if (x.success) { sent++; continue; }
+                if (x.success) {
+                  sent++;
+                  await db.collection("pushTokens").doc(batch[k].id).set({ lastReminderDate: todayIST }, { merge: true });
+                  continue;
+                }
                 const code = x.error && x.error.code;
                 console.log("Failed for", batch[k].id, code);
                 if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
@@ -60,8 +68,8 @@ jobs:
                 }
               }
             }
-            await db.doc("settings/morningReminder").set({ lastRunAt: admin.firestore.FieldValue.serverTimestamp(), lastSent: sent, lastAlreadyOnline: live, lastSkipped: skipped, lastRemoved: removed }, { merge: true });
-            console.log(`Sent ${sent}, already online ${live}, skipped ${skipped}, removed dead tokens ${removed}`);
+            await db.doc("settings/morningReminder").set({ lastRunAt: admin.firestore.FieldValue.serverTimestamp(), lastSent: sent, lastAlreadyReminded: already, lastAlreadyOnline: live, lastSkipped: skipped, lastRemoved: removed }, { merge: true });
+            console.log(`Sent ${sent}, already reminded today ${already}, already online ${live}, skipped ${skipped}, removed dead tokens ${removed}`);
           })().catch((e) => { console.error(e); process.exit(1); });
           JS
           node send.js
