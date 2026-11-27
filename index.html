@@ -578,9 +578,9 @@ function initUserApp() {
   const LIVE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
   const VISIBILITY_WINDOW_MS = 8 * 60 * 60 * 1000; // 8 hours
   const STALE_MS = VISIBILITY_WINDOW_MS; // kept for compatibility with existing filter code below
-  const DEFAULT_RANGE_KM = 2;
-  const EXPANDED_RANGE_KM = 3.5;
-  const AREA_ONLY_RANGE_KM = 8;
+  const DEFAULT_RANGE_KM = 5.5;
+  const EXPANDED_RANGE_KM = 5.5;
+  const AREA_ONLY_RANGE_KM = 5.5;
   const AVG_SPEED_KMH = 18;
   const DEFAULT_COORDS = { lat: 19.076, lng: 72.8777 };
 
@@ -836,7 +836,7 @@ function initUserApp() {
     }
 
     if (sorted.length === 0) {
-      listContent.innerHTML = `<div class="empty-box">No ${isAll ? "technicians" : trade.label.toLowerCase() + "s"} found within 3.5 km right now. Open the Technician app on another device and go online to test live matching.</div>`;
+      listContent.innerHTML = `<div class="empty-box">No ${isAll ? "technicians" : trade.label.toLowerCase() + "s"} found within 5.5 km right now. Open the Technician app on another device and go online to test live matching.</div>`;
       return;
     }
     listContent.innerHTML = pageItems.map((t) => {
