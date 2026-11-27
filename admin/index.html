@@ -156,7 +156,7 @@
   </details>
   <div id="summary"></div>
   <div id="rem-card" class="card" style="margin:0 0 12px; padding:12px 14px;">
-    <div style="font-weight:700; font-size:14px; margin-bottom:6px;">Morning reminder (9:00 AM)</div>
+    <div style="font-weight:700; font-size:14px; margin-bottom:6px;">Morning reminder (8:10 AM, backup 10:40 AM)</div>
     <div id="rem-info" class="muted" style="font-size:12.5px; line-height:1.6;">Loading…</div>
     <div class="row" style="margin:8px 0 0"><button class="b-warn" id="rem-toggle" type="button" disabled>Pause reminders</button></div>
   </div>
@@ -527,9 +527,10 @@
       const tk = await F.getDocs(F.collection(db, "pushTokens"));
       const st = await F.getDoc(F.doc(db, "settings", "morningReminder"));
       const d = st.exists() ? st.data() : {};
+      const todayIST = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
       remPaused = d.paused === true;
       const last = d.lastRunAt && d.lastRunAt.toMillis ? new Date(d.lastRunAt.toMillis()).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "not yet";
-      info.innerHTML = `Status: <b style="color:${remPaused ? "#C7401E" : "#1F6B42"}">${remPaused ? "PAUSED" : "Automatic, ON"}</b><br>Technicians enrolled: <b>${tk.size}</b><br>Last run: ${last}${d.lastRunAt ? " · sent to <b>" + (d.lastSent || 0) + "</b> offline technician(s)" : ""}`;
+      info.innerHTML = `Status: <b style="color:${remPaused ? "#C7401E" : "#1F6B42"}">${remPaused ? "PAUSED" : "Automatic, ON"}</b><br>Technicians enrolled: <b>${tk.size}</b><br>Last run: ${last}${d.lastRunAt ? " · sent to <b>" + (d.lastSent || 0) + "</b>" + (d.lastAlreadyReminded ? ", already reminded <b>" + d.lastAlreadyReminded + "</b>" : "") : ""}<br>Reminded today: <b>${tk.docs.filter((x) => x.data().lastReminderDate === todayIST).length} of ${tk.size}</b>`;
       btn.textContent = remPaused ? "Resume reminders" : "Pause reminders";
       btn.className = remPaused ? "b-ok" : "b-warn";
       btn.disabled = false;
