@@ -116,7 +116,7 @@
   </div>
 
   <div class="row">
-    <input type="text" id="search" placeholder="Search name or phone…" />
+    <input type="text" id="search" placeholder="Search name, phone or trade…" />
     <select id="filter">
       <option value="followup" selected>Needs follow-up</option>
       <option value="trialover">Trial over</option>
@@ -126,6 +126,8 @@
       <option value="activetoday">Active today (latest first)</option>
       <option value="gotenq">Got enquiries (latest first)</option>
       <option value="notjoined">Added by me · not joined yet</option>
+      <option value="notmessaged">Not messaged yet (not joined)</option>
+      <option value="followupdue">Follow-up due · messaged 15+ days ago</option>
       <option value="all">All</option>
       <option value="verified">Verified</option>
       <option value="unverified">Unverified</option>
@@ -190,6 +192,8 @@
   const $ = (id) => document.getElementById(id);
   let db, auth, F, A;            // F = firestore module, A = auth module
   let records = [];
+  let outreach = {}, outreachOk = true;   // WhatsApp invitation log: { phone: { at, count } }
+  const FOLLOWUP_DAYS = 15;
 
   function setStatus(msg, cls) { $("status").textContent = msg; $("status").className = cls || ""; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
@@ -422,6 +426,25 @@
     ["btn-verify", "btn-unverify", "btn-delete", "btn-paid", "btn-hide", "btn-show"].forEach((id) => { $(id).disabled = n === 0; });
   }
 
+  function msgText(id) {
+    const o = outreach[id];
+    if (!o || !o.at) return "";
+    const d = new Date(o.at).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short" });
+    const due = (Date.now() - o.at) >= FOLLOWUP_DAYS * 86400000;
+    return "Messaged " + d + " · " + o.count + (o.count === 1 ? " time" : " times") + (due ? " · follow-up due" : "");
+  }
+  $("rows").addEventListener("click", (e) => {
+    const a = e.target.closest && e.target.closest("a.wa[data-track]");
+    if (!a) return;
+    const id = a.dataset.track;
+    const prev = outreach[id] ? outreach[id].count : 0;
+    outreach[id] = { at: Date.now(), count: prev + 1 };
+    const el = document.querySelector('.msgd[data-msg="' + id + '"]');
+    if (el) el.textContent = msgText(id);
+    F.setDoc(F.doc(db, "outreach", id), { phone: id, lastAt: F.serverTimestamp(), count: F.increment(1) }, { merge: true })
+      .catch((err) => setStatus("⚠ Could not save the 'Messaged' mark: " + (err.code || err.message), "err"));
+  });
+
   function render() {
     const q = $("search").value.trim().toLowerCase();
     const f = $("filter").value;
@@ -429,11 +452,14 @@
       if (f === "verified" && r.verified !== true) return false;
       if (f === "unverified" && r.verified === true) return false;
       if (f === "notjoined" && !notJoined(r)) return false;
+      if (f === "notmessaged" && !(notJoined(r) && !outreach[r.id])) return false;
+      if (f === "followupdue" && !(notJoined(r) && outreach[r.id] && (Date.now() - outreach[r.id].at) >= FOLLOWUP_DAYS * 86400000)) return false;
       if (f === "activetoday" && !activeToday(r)) return false;
       if (f === "gotenq" && !((r.leadCount || 0) > 0)) return false;
       if (["followup", "trialover", "trialrunning", "paid", "hidden"].includes(f) && statusOf(r).key !== f) return false;
-      return !q || (r.name || "").toLowerCase().includes(q) || r.id.includes(q);
+      return !q || (r.name || "").toLowerCase().includes(q) || r.id.includes(q) || (r.trades || []).map(tradeLabel).join(" ").toLowerCase().includes(q);
     });
+    if (f === "followupdue") list.sort((x, y) => outreach[x.id].at - outreach[y.id].at);
     if (f === "activetoday") list.sort((x, y) => ms(y.updatedAt) - ms(x.updatedAt));
     if (f === "gotenq") list.sort((x, y) => (ms(y.lastLeadAt) - ms(x.lastLeadAt)) || ((y.leadCount || 0) - (x.leadCount || 0)));
     if (!list.length) {
@@ -449,10 +475,11 @@
           <td><div class="nm">${esc(r.name) || "<span class='muted'>(no name)</span>"}</div>
               <div class="ph">${esc(r.id)}</div>
               <div class="tr">${esc((r.trades || []).map(tradeLabel).join(", "))}</div>
+              ${notJoined(r) ? '<div class="tr msgd" data-msg="' + esc(r.id) + '" style="color:#8B5E1E;font-weight:600">' + msgText(r.id) + '</div>' : ""}
               <div class="ld">${leadsText(r)}</div>${activeToday(r) ? '<div class="tr" style="color:#1F6B42;font-weight:600">' + (liveNow(r) ? "Online now" : "Active " + ago(ms(r.updatedAt))) + '</div>' : ""}${ms(r.lastLeadAt) ? '<div class="tr" style="color:#1F6B42;font-weight:600">Last enquiry ' + ago(ms(r.lastLeadAt)) + '</div>' : ""}${notJoined(r) ? '<div class="tr">Added by you · ' + esc(r.area || "") + '</div>' : ""}</td>
           <td>${(() => { const st = statusOf(r); return `<span class="chipf ${st.cls}">${st.label}</span><div class="tr">${esc(st.extra)}</div>`; })()}
               <div style="margin-top:4px"><span class="badge ${r.verified === true ? "b-yes" : "b-no"}">${r.verified === true ? "Verified" : "Unverified"}</span></div></td>
-          <td><a class="wa" href="${IS_MOBILE ? "whatsapp://send?phone=" + esc(wa) + waQ : "https://wa.me/" + esc(wa) + waQ}"${IS_MOBILE ? "" : ' target="_blank" rel="noopener"'}>WhatsApp</a></td>
+          <td><a class="wa"${notJoined(r) ? ' data-track="' + esc(r.id) + '"' : ""} href="${IS_MOBILE ? "whatsapp://send?phone=" + esc(wa) + waQ : "https://wa.me/" + esc(wa) + waQ}"${IS_MOBILE ? "" : ' target="_blank" rel="noopener"'}>WhatsApp</a></td>
         </tr>`;
       }).join("");
     }
@@ -552,7 +579,12 @@
     try {
       const snap = await F.getDocs(F.collection(db, "technicians"));
       records = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setStatus(`Loaded ${records.length} record(s).`, "ok");
+      outreach = {}; outreachOk = true;
+      try {
+        const og = await F.getDocs(F.collection(db, "outreach"));
+        og.docs.forEach((d) => { const x = d.data(); outreach[d.id] = { at: ms(x.lastAt), count: x.count || 0 }; });
+      } catch (e) { outreachOk = false; }
+      setStatus(`Loaded ${records.length} record(s).` + (outreachOk ? "" : " (Messaged marks are not active yet - the new Firebase rules are needed.)"), "ok");
       const nf = records.filter((r) => statusOf(r).key === "followup").length;
       const nu = records.filter((r) => r.verified !== true).length;
       $("summary").textContent = `🟢 Online now: ${records.filter(liveNow).length} · 📅 Active today: ${records.filter(activeToday).length}  |  Needs follow-up: ${nf} · Unverified: ${nu}`;
@@ -675,7 +707,7 @@
   // ---- Help guide (4 pages) ----
   const HELP = [
     { t: "Top of the page", i: [
-      ["Search", "Type a name or phone number to find one technician."],
+      ["Search", "Type a name, a phone number or a trade such as pest or AC."],
       ["Refresh", "Reloads the list from the database. Use it after any change."],
       ["Online now", "Technicians whose app has been live in the last 10 minutes."],
       ["Active today", "Technicians who opened the app at any time today."],
@@ -690,6 +722,8 @@
       ["Active today", "Opened the app today, latest first."],
       ["Got enquiries", "At least one enquiry, latest first."],
       ["Added by me", "Imported by you, and has not opened the app yet."],
+      ["Not messaged yet", "Added by you, not joined, and you have not tapped his WhatsApp button yet."],
+      ["Follow-up due", "Not joined, and you messaged him 15 or more days ago. Oldest message first. Send a different, shorter reminder."],
       ["All, Verified, Unverified", "Everyone, or only by the green tick."] ] },
     { t: "Buttons for selected technicians", i: [
       ["How to use", "Tick the box at the left of a row. The top box ticks every row shown. The number in brackets is how many you ticked. Buttons stay grey until you tick."],
@@ -699,7 +733,7 @@
       ["Hide from customers", "Their data stays saved. Customers can't see them."],
       ["Show again", "Makes hidden technicians visible again."],
       ["Delete", "Removes the record for good. Use your backup file if you need it back."],
-      ["WhatsApp (each row)", "Opens a chat with that technician. For technicians who haven't joined, it adds an invitation message."] ] },
+      ["WhatsApp (each row)", "Opens a chat with that technician. For technicians who haven't joined, it adds an invitation message and saves 'Messaged' with the date under his trade. The page only knows you tapped it, not that you pressed send."] ] },
     { t: "Tools and the morning reminder", i: [
       ["Change / Remove Trade", "Type the 10-digit number and tap Find. Then add a trade, change one, or remove one. A technician can have two trades at most."],
       ["Download backup", "Saves all technicians as a spreadsheet file. Do this once a week and keep it on Drive."],
