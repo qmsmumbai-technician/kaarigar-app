@@ -189,8 +189,8 @@
   .recent-label { font-size:10px; color:#8B5E1E; font-weight:600; letter-spacing:.05em; }
   .old-dot { background:#9AA0AB; }
   .old-label { color:#6B7280; }
-  .seen-dot { background:#3F6FB5; }
-  .seen-label { color:#2F5A99; }
+  .seen-dot { background:#C0446E; }
+  .seen-label { color:#A32F58; }
   .never-dot { background:#8A5BB8; }
   .never-label { color:#6B3F99; }
   .call-note { font-size:11px; font-weight:600; color:#2F6FA8; margin-top:3px; }
@@ -871,7 +871,7 @@ function initUserApp() {
       return `
       <div class="tech-card">
         <div class="tech-stub">${stubBands}</div>
-        <div class="tech-body" style="border-left:4px solid ${t.isLive ? "#2E8B57" : t.tier === 1 ? "#C77D1E" : t.areaOnly ? "#8A5BB8" : "#3F6FB5"}">
+        <div class="tech-body" style="border-left:4px solid ${t.isLive ? "#2E8B57" : t.tier === 1 ? "#C77D1E" : t.areaOnly ? "#8A5BB8" : "#C0446E"}">
           <div class="tech-top">
             <div class="avatar">${initials(t.name)}</div>
             <div style="flex:1;min-width:0">
