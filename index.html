@@ -189,6 +189,10 @@
   .recent-label { font-size:10px; color:#8B5E1E; font-weight:600; letter-spacing:.05em; }
   .old-dot { background:#9AA0AB; }
   .old-label { color:#6B7280; }
+  .seen-dot { background:#3F6FB5; }
+  .seen-label { color:#2F5A99; }
+  .never-dot { background:#8A5BB8; }
+  .never-label { color:#6B3F99; }
   .call-note { font-size:11px; font-weight:600; color:#2F6FA8; margin-top:3px; }
   .trade-tag { font-size:9px; color:#8891A0; font-family:'JetBrains Mono',monospace; margin-top:1px; }
   .verified-tick { display:inline-block; width:16px; height:16px; vertical-align:-3px; margin-left:5px; }
@@ -867,7 +871,7 @@ function initUserApp() {
       return `
       <div class="tech-card">
         <div class="tech-stub">${stubBands}</div>
-        <div class="tech-body">
+        <div class="tech-body" style="border-left:4px solid ${t.isLive ? "#2E8B57" : t.tier === 1 ? "#C77D1E" : t.areaOnly ? "#8A5BB8" : "#3F6FB5"}">
           <div class="tech-top">
             <div class="avatar">${initials(t.name)}</div>
             <div style="flex:1;min-width:0">
@@ -880,8 +884,8 @@ function initUserApp() {
                         ? `<span class="recent-dot"></span><span class="recent-label">Online today · last seen ${timeAgo(t.ageMs)}</span>`
                         : `<span class="recent-dot"></span><span class="recent-label">Was online · ${timeAgo(t.ageMs)} · Now offline</span>`)
                     : t.areaOnly
-                      ? '<span class="recent-dot old-dot"></span><span class="recent-label old-label">Not online yet</span>'
-                      : `<span class="recent-dot old-dot"></span><span class="recent-label old-label">Last seen ${timeAgo(t.ageMs)}</span>`
+                      ? '<span class="recent-dot never-dot"></span><span class="recent-label never-label">Not online yet</span>'
+                      : `<span class="recent-dot seen-dot"></span><span class="recent-label seen-label">Last seen ${timeAgo(t.ageMs)}</span>`
               }</div>${t.isLive ? "" : '<div class="call-note">You can call, he may reply</div>'}
             </div>
           </div>
