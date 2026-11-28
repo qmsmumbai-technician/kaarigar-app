@@ -604,6 +604,7 @@ function initUserApp() {
     return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1-s));
   }
   const etaMin = (km) => Math.max(2, Math.round((km/AVG_SPEED_KMH)*60));
+  const escH = (v) => String(v == null ? "" : v).replace(/[&<>"'`]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;","`":"&#96;" }[c]));
   const initials = (n) => (n||"?").split(" ").filter(Boolean).map(w=>w[0]).join("").slice(0,2).toUpperCase();
   function timeAgo(ms) {
     const mins = Math.floor(ms / 60000);
@@ -874,9 +875,9 @@ function initUserApp() {
         <div class="tech-stub">${stubBands}</div>
         <div class="tech-body" style="border-left:4px solid ${t.isLive ? "#2E8B57" : t.tier === 1 ? "#C77D1E" : t.areaOnly ? "#8A5BB8" : "#C0446E"}">
           <div class="tech-top">
-            <div class="avatar">${initials(t.name)}</div>
+            <div class="avatar">${escH(initials(t.name))}</div>
             <div style="flex:1;min-width:0">
-              <div class="tech-name">${t.name || "Unnamed technician"}${t.verified === true ? VERIFIED_TICK_SVG_USER + '<span class="verified-label">Verified</span>' : ""}</div>
+              <div class="tech-name">${escH(t.name || "Unnamed technician")}${t.verified === true ? VERIFIED_TICK_SVG_USER + '<span class="verified-label">Verified</span>' : ""}</div>
               <div class="live-row">${
                 t.isLive
                   ? '<span class="live-dot"></span><span class="live-label">LIVE · ONLINE</span>'
@@ -898,8 +899,8 @@ function initUserApp() {
             ${t.approx ? `<span>📍 <b style="font-weight:800;color:#D2691E">~${t.distance.toFixed(1)} km</b></span>` : `<span>📍 <b style="font-weight:800;color:#D2691E">${t.distance.toFixed(2)} km</b></span>
             <span>⏱ ~${etaMin(t.distance)} min</span>`}
           </div>
-          <a class="call-btn" href="tel:${t.phone || ""}" data-techid="${t._id || ""}">📞 Call ${(t.name || "technician").split(" ")[0]}</a>
-          <button type="button" class="loc-btn" data-techid="${t._id || ""}" data-phone="${t.phone || ""}" data-name="${(t.name || "technician").split(" ")[0].replace(/"/g,"")}">📍 Send my address &amp; location</button>
+          <a class="call-btn" href="tel:${escH(t.phone || "")}" data-techid="${escH(t._id || "")}">📞 Call ${escH((t.name || "technician").split(" ")[0])}</a>
+          <button type="button" class="loc-btn" data-techid="${escH(t._id || "")}" data-phone="${escH(t.phone || "")}" data-name="${escH((t.name || "technician").split(" ")[0])}">📍 Send my address &amp; location</button>
         </div>
       </div>`;
     }).join("");
