@@ -581,6 +581,13 @@ function initUserApp() {
   const DEFAULT_RANGE_KM = 5.5;
   const EXPANDED_RANGE_KM = 5.5;
   const AREA_ONLY_RANGE_KM = 5.5;
+  // Ranking bonus (sorting only; the distance shown on the card is always the real distance).
+  const LIVE_BONUS_KM = 1.0;     // live now counts as 1 km closer
+  const ACTIVE_BONUS_KM = 0.5;   // active in the last 8 hours counts as 0.5 km closer
+  // Coordinates of the built-in area names used by the admin Import tool. A technician whose saved position
+  // equals one of these was added by area name only (approximate); pinned / exact positions never match.
+  const AREA_TABLE_COORDS = new Set(["18.9894,73.1175", "19.0178,72.8478", "19.0522,72.9005", "19.0596,72.8295", "19.0726,72.8795", "19.0771,72.9986", "19.0810,72.8410", "19.0860,72.9080", "19.0990,72.8440", "19.1197,72.8464", "19.1360,72.8490", "19.1663,72.8526", "19.1726,72.9425", "19.1860,72.8480", "19.2043,72.8530", "19.2183,72.9781", "19.2183,73.0868", "19.2307,72.8567", "19.2437,73.1355", "19.2500,72.8590", "19.2813,72.8688", "19.2900,72.8600", "19.3010,72.8510", "19.3015,72.8570", "19.3040,72.8450", "19.3520,72.8470", "19.3780,72.8250", "19.3880,72.8350", "19.3980,72.8460", "19.4050,72.8400", "19.4170,72.8150", "19.4170,72.8250", "19.4175,72.8330", "19.4540,72.7950", "19.4560,72.8110", "19.4600,72.8300", "19.6970,72.7650", "19.8030,72.7550"]);
+  const isApproxPos = (lat, lng) => AREA_TABLE_COORDS.has(lat.toFixed(4) + "," + lng.toFixed(4));
   const AVG_SPEED_KMH = 18;
   const DEFAULT_COORDS = { lat: 19.076, lng: 72.8777 };
 
@@ -727,7 +734,10 @@ function initUserApp() {
       const isLive = isOnlineFlag && ageMs <= LIVE_THRESHOLD_MS;
       // Order: 0 = live now, 1 = active within the last 8 hours, 2 = everyone else ("last seen ...")
       const tier = isLive ? 0 : ((!areaOnly && ageMs <= VISIBILITY_WINDOW_MS) ? 1 : 2);
-      results.push({ ...data, distance, ageMs, isLive, isOnlineFlag, tier, areaOnly });
+      const bonus = tier === 0 ? LIVE_BONUS_KM : (tier === 1 ? ACTIVE_BONUS_KM : 0);
+      const rank = distance - bonus;   // used only for ordering
+      const approx = areaOnly && isApproxPos(data.lat, data.lng);   // "~" is shown only for area-name-only positions
+      results.push({ ...data, distance, ageMs, isLive, isOnlineFlag, tier, areaOnly, rank, approx });
     });
     return results;
   }
@@ -815,13 +825,14 @@ function initUserApp() {
     // (not the all-trades "Need Help Now" view), cap the pool to the nearest
     // 3 — online or recently-offline both count toward this. The "Need Help
     // Now" view is intentionally left uncapped, unchanged.
-    const byNearest = [...pool].sort((a, b) => (a.tier - b.tier) || (a.distance - b.distance));
+    const byNearest = [...pool].sort((a, b) => (a.rank - b.rank) || (a.distance - b.distance));
     const MAX_SHOWN = 5;
     const isCapped = !isAll && byNearest.length > MAX_SHOWN;
     const selected = byNearest;
 
-    // Live first, then active today, then last-seen; nearest first inside each group.
-    let sorted = [...selected].sort((a,b) => (a.tier - b.tier) || (a.distance - b.distance));
+    // Nearest first. Live technicians count as 1 km closer and those active in the last 8 hours as 0.5 km closer
+    // (ordering only - the card always shows the real distance).
+    let sorted = [...selected].sort((a,b) => (a.rank - b.rank) || (a.distance - b.distance));
 
     if (listStart >= sorted.length) listStart = 0;
     const pgEnd = isCapped ? Math.min(listStart + MAX_SHOWN, sorted.length) : sorted.length;
@@ -879,7 +890,7 @@ function initUserApp() {
             return `<span class="trade-pill" style="color:${meta.color}">${meta.label}</span>`;
           }).join("")}</div>` : ""}
           <div class="meta-row">
-            ${t.areaOnly ? `<span>📍 <b style="font-weight:800;color:#D2691E">~${t.distance.toFixed(1)} km</b></span>` : `<span>📍 <b style="font-weight:800;color:#D2691E">${t.distance.toFixed(2)} km</b></span>
+            ${t.approx ? `<span>📍 <b style="font-weight:800;color:#D2691E">~${t.distance.toFixed(1)} km</b></span>` : `<span>📍 <b style="font-weight:800;color:#D2691E">${t.distance.toFixed(2)} km</b></span>
             <span>⏱ ~${etaMin(t.distance)} min</span>`}
           </div>
           <a class="call-btn" href="tel:${t.phone || ""}" data-techid="${t._id || ""}">📞 Call ${(t.name || "technician").split(" ")[0]}</a>
