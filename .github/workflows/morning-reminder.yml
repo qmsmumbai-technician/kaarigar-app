@@ -50,7 +50,7 @@ jobs:
               const batch = send.slice(i, i + 500);
               const res = await admin.messaging().sendEach(batch.map((x) => ({
                 token: x.token,
-                data: { title: "सुप्रभात! ऑनलाइन हो जाइए", body: "टैप करें और आज के ग्राहकों को अपनी लोकेशन दिखाइए।", url: APP_URL + "?online=1" },
+                data: { title: "सुप्रभात! 👉 टैप करके ऑनलाइन हो जाइए", body: "आपके आस-पास के ग्राहक आज कारीगर ढूंढ रहे हैं। ऑनलाइन होते ही वे सीधे आपको कॉल कर सकेंगे।\nसवाल हो तो कॉल/WhatsApp करें: 9860046593", url: APP_URL + "?online=1" },
                 webpush: { headers: { Urgency: "high", TTL: "7200" } },
                 android: { priority: "high", ttl: 7200 * 1000 }
               })));
